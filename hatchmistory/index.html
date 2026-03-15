@@ -2,1663 +2,1577 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HatchMistory — モンスター孵化クリッカー</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>HatchMistory v0.3</title>
 <style>
-  /* ===== CSS Variables & Reset ===== */
-  :root {
-    --bg: #f0ece8;
-    --bg2: #faf7f4;
-    --panel: #ffffff;
-    --border: #e8e0d8;
-    --accent1: #b8a9e0;
-    --accent2: #a8d8b0;
-    --accent3: #f5c8a0;
-    --accent4: #f0a8c0;
-    --text: #4a4060;
-    --text2: #7a7090;
-    --text3: #a09ab0;
-    --shadow: 0 2px 12px rgba(100,80,150,0.08);
-    --shadow-lg: 0 6px 24px rgba(100,80,150,0.14);
-    --radius: 16px;
-    --radius-sm: 10px;
-    --font: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
-    --mist-opacity: 0;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
-  body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    -webkit-tap-highlight-color: transparent;
-  }
+:root {
+  --bg:#f0ece8;--bg2:#faf7f4;--panel:#fff;--border:#e8e0d8;
+  --a1:#b8a9e0;--a2:#a8d8b0;--a3:#f5c8a0;--a4:#f0a8c0;
+  --a5:#a0d0e8;--a6:#f8e080;
+  --tx:#4a4060;--tx2:#7a7090;--tx3:#a09ab0;
+  --sh:0 2px 12px rgba(100,80,150,.08);--sh2:0 6px 24px rgba(100,80,150,.14);
+  --r:16px;--rs:10px;
+  --font:'Segoe UI','Hiragino Sans','Yu Gothic UI',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-tap-highlight-color:transparent}
 
-  /* ===== Layout ===== */
-  #app {
-    display: grid;
-    grid-template-rows: auto auto 1fr auto;
-    grid-template-columns: 1fr;
-    min-height: 100vh;
-    max-width: 520px;
-    margin: 0 auto;
-  }
-  @media (min-width: 900px) {
-    #app {
-      max-width: 1100px;
-      grid-template-columns: 340px 1fr;
-      grid-template-rows: auto auto 1fr auto;
-    }
-    header { grid-column: 1 / -1; }
-    #mist-bar-row { grid-column: 1 / -1; }
-    #left-panel { grid-column: 1; grid-row: 3; overflow-y: auto; max-height: calc(100vh - 130px); }
-    #right-panel { grid-column: 2; grid-row: 3; overflow-y: auto; max-height: calc(100vh - 130px); }
-    footer { grid-column: 1 / -1; }
-  }
+/* ── Layout ── */
+#app{display:grid;grid-template-rows:auto auto 1fr auto;max-width:520px;margin:0 auto;min-height:100vh}
+@media(min-width:960px){
+  #app{max-width:1140px;grid-template-columns:360px 1fr;grid-template-rows:auto auto 1fr auto}
+  header,#resource-bar,footer{grid-column:1/-1}
+  #left-panel{grid-column:1;grid-row:3;overflow-y:auto;max-height:calc(100vh - 140px)}
+  #right-panel{grid-column:2;grid-row:3;overflow-y:auto;max-height:calc(100vh - 140px)}
+}
 
-  /* ===== Header ===== */
-  header {
-    background: linear-gradient(135deg, var(--accent1) 0%, var(--accent4) 100%);
-    padding: 14px 20px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: var(--shadow);
-    position: sticky; top: 0; z-index: 100;
-  }
-  header h1 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #fff;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
-    letter-spacing: 0.04em;
-  }
-  .header-stats { display: flex; gap: 10px; flex-wrap: wrap; }
-  .stat-chip {
-    background: rgba(255,255,255,0.35);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #fff;
-    display: flex; align-items: center; gap: 5px;
-    backdrop-filter: blur(6px);
-  }
-  .stat-chip .icon { font-size: 1rem; }
+/* ── Header ── */
+header{background:linear-gradient(135deg,var(--a1),var(--a4));padding:12px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
+header h1{font-size:1.1rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.2);letter-spacing:.04em}
+.hchip{background:rgba(255,255,255,.3);border-radius:20px;padding:4px 11px;font-size:.78rem;font-weight:600;color:#fff;display:flex;align-items:center;gap:4px;backdrop-filter:blur(4px)}
 
-  /* ===== Mist Bar ===== */
-  #mist-bar-row {
-    background: linear-gradient(135deg, #2a1f3d, #3d2a5a);
-    padding: 8px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: sticky; top: 54px; z-index: 99;
-    box-shadow: 0 2px 8px rgba(40,20,80,0.3);
-  }
-  #mist-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #c8a8f0;
-    white-space: nowrap;
-    letter-spacing: 0.06em;
-  }
-  #mist-track {
-    flex: 1;
-    height: 10px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-    overflow: hidden;
-    position: relative;
-  }
-  #mist-fill {
-    height: 100%;
-    border-radius: 10px;
-    background: linear-gradient(90deg, #7040c0, #b060ff, #e0a0ff);
-    transition: width 0.5s ease;
-    position: relative;
-  }
-  #mist-fill::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: mistShimmer 2s linear infinite;
-  }
-  @keyframes mistShimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
-  #mist-pct {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #e0c0ff;
-    min-width: 38px;
-    text-align: right;
-  }
-  #mist-bonus-label {
-    font-size: 0.68rem;
-    color: #a080d0;
-    white-space: nowrap;
-  }
-  /* Mist overlay on entire page */
-  #mist-overlay {
-    position: fixed; inset: 0;
-    pointer-events: none;
-    z-index: 50;
-    background: radial-gradient(ellipse at 50% 0%, rgba(140,80,220,var(--mist-opacity)) 0%, transparent 70%);
-    transition: --mist-opacity 1s;
-  }
+/* ── Resource Bar ── */
+#resource-bar{background:linear-gradient(135deg,#1e1530,#2d1f4a);padding:7px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:50px;z-index:99}
+.res-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
+.res-chip .ri{font-size:.9rem}
+.res-chip .rv{font-size:.78rem;font-weight:700;color:#fff}
+.res-chip .rl{font-size:.65rem;color:rgba(255,255,255,.5);margin-left:2px}
 
-  /* ===== Panels ===== */
-  #left-panel, #right-panel {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+/* ── Mist Row ── */
+#mist-row{background:linear-gradient(135deg,#2a1f3d,#3d2a5a);padding:6px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:92px;z-index:98}
+#mist-lbl{font-size:.72rem;font-weight:700;color:#c8a8f0;white-space:nowrap}
+#mist-track{flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:8px;overflow:hidden}
+#mist-fill{height:100%;background:linear-gradient(90deg,#7040c0,#e0a0ff);border-radius:8px;transition:width .5s}
+#mist-pct{font-size:.7rem;font-weight:700;color:#e0c0ff;min-width:34px;text-align:right}
+#mist-tier{font-size:.65rem;color:#a080d0;white-space:nowrap}
+#mist-overlay{position:fixed;inset:0;pointer-events:none;z-index:50;transition:background 1s}
 
-  /* ===== Card ===== */
-  .card {
-    background: var(--panel);
-    border-radius: var(--radius);
-    padding: 18px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-  }
-  .card-title {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 14px;
-    display: flex; align-items: center; gap: 6px;
-  }
+/* ── Env Row ── */
+#env-row{background:linear-gradient(135deg,#1a2a3a,#253545);padding:5px 18px;display:flex;align-items:center;gap:16px}
+.env-chip{display:flex;align-items:center;gap:5px;font-size:.68rem;color:rgba(255,255,255,.7)}
+.env-val{font-weight:700;color:#fff}
 
-  /* ===== Egg Area ===== */
-  #egg-area {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-    padding: 24px 18px;
-  }
-  #egg-wrap {
-    position: relative;
-    width: 140px; height: 160px;
-    cursor: pointer;
-    user-select: none;
-    filter: drop-shadow(0 6px 16px rgba(180,150,220,0.3));
-    transition: transform 0.08s;
-  }
-  #egg-wrap:active { transform: scale(0.93); }
-  #egg-svg { width: 100%; height: 100%; }
-  .crack { stroke: rgba(255,255,255,0.7); stroke-width: 2; fill: none; stroke-linecap: round; opacity: 0; transition: opacity 0.3s; }
-  .crack.visible { opacity: 1; }
-  @keyframes eggGlow {
-    0%,100% { filter: drop-shadow(0 6px 16px rgba(180,150,220,0.3)); }
-    50% { filter: drop-shadow(0 6px 28px rgba(200,160,255,0.7)); }
-  }
-  #egg-wrap.glowing { animation: eggGlow 1.2s ease-in-out infinite; }
-  @keyframes eggShake {
-    0%,100% { transform: rotate(0deg); }
-    20% { transform: rotate(-5deg); }
-    40% { transform: rotate(5deg); }
-    60% { transform: rotate(-3deg); }
-    80% { transform: rotate(3deg); }
-  }
-  #egg-wrap.shaking { animation: eggShake 0.4s ease; }
-  #energy-bar-wrap {
-    width: 100%;
-    background: #ede8f5;
-    border-radius: 20px;
-    height: 14px;
-    overflow: hidden;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
-  }
-  #energy-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent1), var(--accent4));
-    border-radius: 20px;
-    transition: width 0.15s ease;
-  }
-  #energy-label { font-size: 0.78rem; color: var(--text2); font-weight: 600; letter-spacing: 0.03em; }
-  #click-hint { font-size: 0.75rem; color: var(--text3); animation: pulse 2s ease-in-out infinite; }
-  @keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+/* ── Panels ── */
+#left-panel,#right-panel{padding:14px;display:flex;flex-direction:column;gap:14px}
 
-  /* ===== Float Text ===== */
-  .float-text {
-    position: fixed;
-    font-size: 1rem; font-weight: 700;
-    color: var(--accent1);
-    pointer-events: none;
-    animation: floatUp 0.8s ease forwards;
-    z-index: 9999;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.1);
-  }
-  @keyframes floatUp {
-    0% { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(-50px) scale(1.3); }
-  }
+/* ── Card ── */
+.card{background:var(--panel);border-radius:var(--r);padding:16px;box-shadow:var(--sh);border:1px solid var(--border)}
+.card-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 
-  /* ===== Monsters Grid ===== */
-  #monsters-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-    gap: 10px;
-  }
-  .monster-card {
-    background: linear-gradient(135deg, #f5f0ff, #ffeef8);
-    border-radius: var(--radius-sm);
-    padding: 10px 6px 8px;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    border: 1.5px solid #e8dff5;
-    position: relative;
-    transition: transform 0.15s, box-shadow 0.15s;
-    cursor: pointer;
-  }
-  .monster-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-  .monster-card.selected-for-fusion {
-    border-color: #e060b0;
-    box-shadow: 0 0 12px rgba(220,80,180,0.5);
-    background: linear-gradient(135deg, #ffeeff, #ffe0f8);
-  }
-  .monster-img-wrap {
-    width: 48px; height: 48px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: var(--accent2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem;
-    flex-shrink: 0;
-  }
-  .monster-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-  .monster-name { font-size: 0.68rem; font-weight: 700; color: var(--text); text-align: center; }
-  .monster-count { position: absolute; top: 4px; right: 6px; font-size: 0.65rem; font-weight: 700; color: var(--accent1); }
-  .monster-income { font-size: 0.62rem; color: var(--text3); }
-  .monster-new-badge {
-    position: absolute; top: -4px; left: -4px;
-    background: var(--accent4); color: #fff; font-size: 0.55rem; font-weight: 700;
-    border-radius: 6px; padding: 2px 5px;
-    animation: badgePop 0.4s ease;
-  }
-  @keyframes badgePop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
-  .empty-monsters {
-    grid-column: 1 / -1; text-align: center; color: var(--text3); font-size: 0.8rem; padding: 16px;
-  }
+/* ── Egg ── */
+#egg-area{display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 16px}
+#egg-wrap{position:relative;width:130px;height:148px;cursor:pointer;user-select:none;filter:drop-shadow(0 6px 16px rgba(180,150,220,.3));transition:transform .08s}
+#egg-wrap:active{transform:scale(.92)}
+#egg-svg{width:100%;height:100%}
+.crack{stroke:rgba(255,255,255,.75);stroke-width:2;fill:none;stroke-linecap:round;opacity:0;transition:opacity .3s}
+.crack.visible{opacity:1}
+@keyframes eggGlow{0%,100%{filter:drop-shadow(0 6px 16px rgba(180,150,220,.3))}50%{filter:drop-shadow(0 6px 28px rgba(200,160,255,.8))}}
+#egg-wrap.glowing{animation:eggGlow 1.2s ease-in-out infinite}
+@keyframes eggShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-5deg)}40%{transform:rotate(5deg)}60%{transform:rotate(-3deg)}80%{transform:rotate(3deg)}}
+#egg-wrap.shaking{animation:eggShake .35s ease}
 
-  /* ===== Fusion Panel ===== */
-  #fusion-panel {
-    background: linear-gradient(135deg, #fff0fa, #f5f0ff);
-    border: 1.5px solid #e8d0f0;
-  }
-  #fusion-slots {
-    display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px;
-  }
-  .fusion-slot {
-    width: 64px; height: 64px;
-    border-radius: 50%;
-    border: 2px dashed #d0b8e8;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem;
-    background: rgba(255,255,255,0.7);
-    position: relative;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .fusion-slot.filled {
-    border-color: #e060b0;
-    box-shadow: 0 0 12px rgba(220,80,180,0.3);
-    background: linear-gradient(135deg, #ffeef8, #f5e8ff);
-  }
-  .fusion-slot .slot-label {
-    font-size: 0.6rem; color: var(--text3); position: absolute; bottom: -16px; white-space: nowrap;
-  }
-  .fusion-plus { font-size: 1.4rem; color: var(--text3); }
-  .fusion-arrow { font-size: 1.4rem; color: var(--accent1); }
-  .fusion-result-slot {
-    width: 64px; height: 64px;
-    border-radius: 50%;
-    border: 2px dashed #b8a0e0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem;
-    background: rgba(255,255,255,0.5);
-  }
-  #btn-fuse {
-    width: 100%;
-    padding: 11px;
-    background: linear-gradient(135deg, #d060b0, #9060e0);
-    color: #fff; border: none; border-radius: var(--radius-sm);
-    font-size: 0.88rem; font-weight: 700; cursor: pointer;
-    transition: transform 0.1s, opacity 0.2s;
-    box-shadow: 0 3px 10px rgba(180,80,200,0.3);
-  }
-  #btn-fuse:disabled { opacity: 0.4; cursor: not-allowed; }
-  #btn-fuse:not(:disabled):active { transform: scale(0.96); }
-  #fusion-hint { font-size: 0.72rem; color: var(--text3); text-align: center; margin-top: 8px; }
-  #btn-fuse-clear {
-    width: 100%; margin-top: 6px;
-    padding: 7px;
-    background: none; border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 0.78rem; color: var(--text3); cursor: pointer;
-  }
-  #btn-fuse-clear:hover { border-color: var(--accent4); color: var(--accent4); }
+/* cost display */
+#click-cost{font-size:.78rem;font-weight:700;color:var(--tx2)}
+#click-progress{width:100%;height:10px;background:#ede8f5;border-radius:10px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,.06)}
+#click-bar{height:100%;background:linear-gradient(90deg,var(--a1),var(--a4));border-radius:10px;transition:width .12s}
+#click-hint{font-size:.72rem;color:var(--tx3);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
 
-  /* ===== Ranch Area ===== */
-  #ranch-wrap {
-    position: relative;
-    width: 100%;
-    height: 200px;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    background: linear-gradient(180deg, #d0f0d8 0%, #a8d8a0 60%, #88b880 100%);
-    border: 2px solid #b0d8a8;
-  }
-  /* Ground texture */
-  #ranch-wrap::before {
-    content: '';
-    position: absolute; bottom: 0; left: 0; right: 0;
-    height: 30%;
-    background: repeating-linear-gradient(90deg, rgba(100,160,80,0.2) 0px, rgba(100,160,80,0.2) 4px, transparent 4px, transparent 12px);
-  }
-  .ranch-slime {
-    position: absolute;
-    display: flex; flex-direction: column; align-items: center; gap: 1px;
-    cursor: pointer;
-    animation: ranchBounce 2s ease-in-out infinite;
-    transition: transform 0.15s;
-    z-index: 2;
-  }
-  .ranch-slime:hover { transform: scale(1.15) !important; }
-  .ranch-slime-body {
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    position: relative;
-  }
-  .ranch-slime-body::after {
-    content: '';
-    position: absolute; bottom: -6px;
-    width: 70%; height: 8px;
-    background: rgba(0,0,0,0.1);
-    border-radius: 50%;
-    filter: blur(2px);
-  }
-  @keyframes ranchBounce {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-  }
-  .ranch-slime-name { font-size: 0.55rem; font-weight: 700; color: rgba(50,40,80,0.8); white-space: nowrap; }
-  /* Mist on ranch */
-  #ranch-mist {
-    position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(180,120,255,0) 0%, rgba(180,120,255,0) 100%);
-    pointer-events: none;
-    transition: background 1s;
-    z-index: 3;
-  }
-  #ranch-empty-hint {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-    color: rgba(80,120,80,0.5); font-size: 0.78rem; text-align: center; pointer-events: none;
-  }
+/* egg type badge */
+#egg-type-badge{font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:12px;background:rgba(180,150,240,.15);color:var(--a1);border:1px solid rgba(180,150,240,.3)}
 
-  /* ===== Hatch Animation Overlay ===== */
-  #hatch-overlay {
-    position: fixed; inset: 0;
-    background: rgba(255,255,255,0.85);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-    z-index: 200;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.3s;
-    backdrop-filter: blur(4px);
-  }
-  #hatch-overlay.visible { opacity: 1; pointer-events: all; }
-  #hatch-monster-img {
-    width: 120px; height: 120px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: var(--accent2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 4rem;
-    box-shadow: 0 8px 32px rgba(180,150,220,0.4);
-    animation: popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
-  }
-  @keyframes popIn { 0%{transform:scale(0);opacity:0} 100%{transform:scale(1);opacity:1} }
-  #hatch-monster-img img { width: 100%; height: 100%; object-fit: cover; }
-  #hatch-title { font-size: 1.4rem; font-weight: 800; color: var(--text); animation: fadeSlideUp 0.4s 0.2s ease both; }
-  #hatch-rarity { font-size: 0.85rem; font-weight: 700; animation: fadeSlideUp 0.4s 0.25s ease both; }
-  #hatch-desc { font-size: 0.88rem; color: var(--text2); text-align: center; max-width: 280px; line-height: 1.5; animation: fadeSlideUp 0.4s 0.3s ease both; }
-  #hatch-ok {
-    background: linear-gradient(135deg, var(--accent1), var(--accent4));
-    color: #fff; border: none;
-    padding: 12px 36px; border-radius: 50px;
-    font-size: 1rem; font-weight: 700; cursor: pointer;
-    box-shadow: var(--shadow);
-    transition: transform 0.1s;
-    animation: fadeSlideUp 0.4s 0.4s ease both;
-  }
-  #hatch-ok:active { transform: scale(0.95); }
-  @keyframes fadeSlideUp { 0%{opacity:0;transform:translateY(16px)} 100%{opacity:1;transform:translateY(0)} }
+/* ── Toast ── */
+#toast-wrap{position:fixed;top:148px;right:16px;z-index:500;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:var(--panel);border-radius:var(--rs);padding:9px 14px;box-shadow:var(--sh2);border:1px solid var(--border);font-size:.8rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:8px;animation:toastIn .3s ease,toastOut .3s ease forwards;max-width:260px}
+.toast.rare{border-color:var(--a6);background:linear-gradient(135deg,#fffbe8,#fff8d0)}
+.toast.legendary{border-color:#e0a0f0;background:linear-gradient(135deg,#fdf0ff,#f8e4ff)}
+@keyframes toastIn{0%{opacity:0;transform:translateX(20px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{0%{opacity:1}100%{opacity:0;transform:translateX(20px)}}
 
-  /* ===== Tab Bar ===== */
-  #tab-bar {
-    display: flex; gap: 0;
-    background: var(--panel);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-  }
-  .tab-btn {
-    flex: 1; padding: 10px 4px;
-    background: none; border: none;
-    font-size: 0.73rem; font-weight: 600;
-    color: var(--text3); cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    transition: color 0.15s, background 0.15s;
-  }
-  .tab-btn .tab-icon { font-size: 1.1rem; }
-  .tab-btn.active { color: var(--accent1); background: #f5f0ff; }
-  .tab-btn:hover:not(.active) { background: var(--bg); }
+/* ── Float text ── */
+.float-text{position:fixed;font-size:.95rem;font-weight:700;color:var(--a1);pointer-events:none;animation:floatUp .75s ease forwards;z-index:9999;text-shadow:0 1px 4px rgba(0,0,0,.1)}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-44px) scale(1.25)}}
 
-  /* ===== Tab Content ===== */
-  .tab-pane { display: none; }
-  .tab-pane.active { display: block; }
+/* ── Ranch ── */
+#ranch-wrap{position:relative;width:100%;height:220px;border-radius:var(--rs);overflow:hidden;background:linear-gradient(180deg,#c8f0d0 0%,#98d090 55%,#78b068 100%);border:2px solid #a0d098;cursor:default}
+#ranch-wrap::before{content:'';position:absolute;bottom:0;left:0;right:0;height:28%;background:repeating-linear-gradient(90deg,rgba(80,140,60,.18) 0px,rgba(80,140,60,.18) 4px,transparent 4px,transparent 14px)}
+.ranch-slime{position:absolute;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;animation:rBounce 2s ease-in-out infinite;z-index:2;transition:transform .15s}
+.ranch-slime:hover{transform:scale(1.18) !important}
+.ranch-slime.on-expedition{opacity:.4;filter:grayscale(.6)}
+.rsb{border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,.15);position:relative}
+.rsb::after{content:'';position:absolute;bottom:-5px;width:65%;height:7px;background:rgba(0,0,0,.08);border-radius:50%;filter:blur(2px)}
+@keyframes rBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.rsn{font-size:.52rem;font-weight:700;color:rgba(40,30,60,.75);white-space:nowrap;text-shadow:0 1px 2px rgba(255,255,255,.6)}
+.exp-badge{position:absolute;top:-6px;right:-4px;background:#e06060;color:#fff;font-size:.52rem;font-weight:700;border-radius:8px;padding:1px 5px;z-index:3}
+#ranch-mist{position:absolute;inset:0;pointer-events:none;z-index:3;transition:background 1s}
+#ranch-empty-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(70,100,60,.5);font-size:.75rem;text-align:center;pointer-events:none}
 
-  /* ===== Zukan ===== */
-  #zukan-list { display: flex; flex-direction: column; gap: 12px; }
-  .zukan-entry {
-    display: flex; gap: 12px; align-items: center;
-    padding: 12px; border-radius: var(--radius-sm);
-    background: linear-gradient(135deg, #f8f4ff, #fff6fb);
-    border: 1.5px solid #ede5fa;
-  }
-  .zukan-img {
-    width: 56px; height: 56px; flex-shrink: 0;
-    border-radius: 50%;
-    background: var(--accent2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2rem; overflow: hidden;
-  }
-  .zukan-img img { width: 100%; height: 100%; object-fit: cover; }
-  .zukan-img.locked { filter: grayscale(1) brightness(0.6); }
-  .zukan-info { flex: 1; }
-  .zukan-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 3px; }
-  .zukan-desc { font-size: 0.78rem; color: var(--text2); line-height: 1.4; }
-  .zukan-count-badge {
-    background: var(--accent1); color: #fff; border-radius: 12px; padding: 2px 8px;
-    font-size: 0.68rem; font-weight: 700; white-space: nowrap;
-  }
-  .zukan-entry.undiscovered .zukan-name,
-  .zukan-entry.undiscovered .zukan-desc { color: var(--text3); }
-  .zukan-source-badge {
-    font-size: 0.62rem; border-radius: 6px; padding: 2px 6px; font-weight: 700; margin-left: 4px;
-    display: inline-block;
-  }
+/* ── Expedition Panel ── */
+.exp-slot{display:flex;align-items:center;gap:10px;padding:9px 12px;background:linear-gradient(135deg,#f5f0ff,#fff0f8);border-radius:var(--rs);border:1.5px solid #e8d8f0}
+.exp-timer{font-size:.7rem;font-weight:700;color:var(--a1);min-width:42px}
+.exp-name{font-size:.75rem;font-weight:700;color:var(--tx);flex:1}
+.exp-reward{font-size:.68rem;color:var(--tx2)}
 
-  /* ===== Stats Panel ===== */
-  #stats-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  }
-  .stat-box {
-    background: linear-gradient(135deg, #f5f0ff, #fff0f8);
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    border: 1.5px solid #ede5fa;
-  }
-  .stat-box-label { font-size: 0.7rem; color: var(--text3); font-weight: 600; margin-bottom: 4px; }
-  .stat-box-value { font-size: 1.2rem; font-weight: 800; color: var(--text); }
-  .stat-box-sub { font-size: 0.68rem; color: var(--text2); margin-top: 2px; }
+/* ── Fusion ── */
+#fusion-panel{background:linear-gradient(135deg,#fff0fa,#f5f0ff);border:1.5px solid #e8d0f0}
+#fusion-slots{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px}
+.fslot{width:58px;height:58px;border-radius:50%;border:2px dashed #d0b8e8;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:rgba(255,255,255,.7);position:relative;transition:border-color .2s,box-shadow .2s}
+.fslot.filled{border-color:#e060b0;box-shadow:0 0 10px rgba(220,80,180,.3);background:linear-gradient(135deg,#ffeef8,#f5e8ff)}
+.fslot .slot-label{font-size:.56rem;color:var(--tx3);position:absolute;bottom:-15px;white-space:nowrap}
+.fplus{font-size:1.3rem;color:var(--tx3)}
+.farrow{font-size:1.3rem;color:var(--a1)}
+.fresult{width:58px;height:58px;border-radius:50%;border:2px dashed #b8a0e0;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:rgba(255,255,255,.5)}
+#btn-fuse{width:100%;padding:10px;background:linear-gradient(135deg,#d060b0,#9060e0);color:#fff;border:none;border-radius:var(--rs);font-size:.85rem;font-weight:700;cursor:pointer;transition:transform .1s,opacity .2s;box-shadow:0 3px 10px rgba(180,80,200,.3)}
+#btn-fuse:disabled{opacity:.4;cursor:not-allowed}
+#btn-fuse:not(:disabled):active{transform:scale(.96)}
+#btn-fuse-clear{width:100%;margin-top:5px;padding:6px;background:none;border:1.5px solid var(--border);border-radius:var(--rs);font-size:.75rem;color:var(--tx3);cursor:pointer}
+#fusion-hint{font-size:.69rem;color:var(--tx3);text-align:center;margin-top:7px}
 
-  /* ===== Buttons ===== */
-  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .btn-secondary {
-    flex: 1; min-width: 80px;
-    padding: 9px 12px;
-    border-radius: var(--radius-sm);
-    border: 1.5px solid var(--border);
-    background: var(--bg2);
-    color: var(--text2);
-    font-size: 0.8rem; font-weight: 600; cursor: pointer;
-    transition: all 0.15s;
-  }
-  .btn-secondary:hover { border-color: var(--accent1); color: var(--accent1); background: #f5f0ff; }
-  .btn-danger { background: #fff0f0; color: #e08080; border-color: #f5c0c0; }
-  .btn-danger:hover { background: #ffe0e0; border-color: #e08080; color: #c04040; }
+/* ── Monster Grid ── */
+#monsters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:9px}
+.mcard{background:linear-gradient(135deg,#f5f0ff,#ffeef8);border-radius:var(--rs);padding:9px 5px 7px;display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid #e8dff5;position:relative;transition:transform .15s,box-shadow .15s;cursor:pointer}
+.mcard:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.mcard.sel{border-color:#e060b0;box-shadow:0 0 10px rgba(220,80,180,.45);background:linear-gradient(135deg,#ffeeff,#ffe0f8)}
+.mcard-img{width:44px;height:44px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+.mcard-img img{width:100%;height:100%;object-fit:cover}
+.mcard-name{font-size:.63rem;font-weight:700;color:var(--tx);text-align:center}
+.mcard-count{position:absolute;top:3px;right:5px;font-size:.6rem;font-weight:700;color:var(--a1)}
+.mcard-income{font-size:.58rem;color:var(--tx3)}
+.mcard-role{font-size:.56rem;font-weight:700;padding:1px 5px;border-radius:8px;margin-top:1px}
+.empty-msg{grid-column:1/-1;text-align:center;color:var(--tx3);font-size:.78rem;padding:14px}
 
-  /* ===== Offline Notice ===== */
-  #offline-notice {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: var(--text); color: #fff;
-    padding: 10px 22px; border-radius: 50px;
-    font-size: 0.82rem; font-weight: 600;
-    box-shadow: var(--shadow-lg);
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.3s;
-    z-index: 300;
-    white-space: nowrap;
-  }
-  #offline-notice.visible { opacity: 1; }
+/* ── Special Hatch Overlay (first-time / legendary only) ── */
+#hatch-overlay{position:fixed;inset:0;background:rgba(255,255,255,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(4px)}
+#hatch-overlay.visible{opacity:1;pointer-events:all}
+#hatch-mon-img{width:110px;height:110px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:3.5rem;box-shadow:0 8px 32px rgba(180,150,220,.4);animation:popIn .5s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes popIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+#hatch-mon-img img{width:100%;height:100%;object-fit:cover}
+#hatch-title{font-size:1.3rem;font-weight:800;color:var(--tx);animation:fsUp .4s .2s ease both}
+#hatch-rarity{font-size:.82rem;font-weight:700;animation:fsUp .4s .25s ease both}
+#hatch-desc{font-size:.85rem;color:var(--tx2);text-align:center;max-width:260px;line-height:1.5;animation:fsUp .4s .3s ease both}
+#hatch-ok{background:linear-gradient(135deg,var(--a1),var(--a4));color:#fff;border:none;padding:11px 34px;border-radius:50px;font-size:.95rem;font-weight:700;cursor:pointer;animation:fsUp .4s .4s ease both}
+@keyframes fsUp{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:translateY(0)}}
 
-  /* ===== Event Banner ===== */
-  #event-banner {
-    position: fixed; top: 110px; left: 50%; transform: translateX(-50%);
-    background: linear-gradient(135deg, #4020a0, #a030d0);
-    color: #fff; padding: 10px 24px; border-radius: 50px;
-    font-size: 0.85rem; font-weight: 700;
-    box-shadow: 0 4px 20px rgba(120,40,200,0.5);
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.4s;
-    z-index: 150;
-    display: flex; align-items: center; gap: 8px;
-  }
-  #event-banner.visible { opacity: 1; }
+/* ── Tabs ── */
+#tab-bar{display:flex;background:var(--panel);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border)}
+.tab-btn{flex:1;padding:9px 3px;background:none;border:none;font-size:.68rem;font-weight:600;color:var(--tx3);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:color .15s,background .15s}
+.tab-btn .ti{font-size:1rem}
+.tab-btn.active{color:var(--a1);background:#f5f0ff}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
 
-  footer {
-    text-align: center; padding: 8px; font-size: 0.68rem; color: var(--text3);
-  }
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #d5cce8; border-radius: 3px; }
+/* ── Zukan ── */
+#zukan-list{display:flex;flex-direction:column;gap:10px}
+.zen{display:flex;gap:11px;align-items:center;padding:11px;border-radius:var(--rs);background:linear-gradient(135deg,#f8f4ff,#fff6fb);border:1.5px solid #ede5fa}
+.zen-img{width:52px;height:52px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;overflow:hidden}
+.zen-img img{width:100%;height:100%;object-fit:cover}
+.zen-img.locked{filter:grayscale(1) brightness(.55)}
+.zen-info{flex:1}
+.zen-name{font-weight:700;font-size:.86rem;margin-bottom:2px}
+.zen-desc{font-size:.74rem;color:var(--tx2);line-height:1.4}
+.zen-badge{background:var(--a1);color:#fff;border-radius:11px;padding:2px 7px;font-size:.64rem;font-weight:700;white-space:nowrap}
+.zen.unk .zen-name,.zen.unk .zen-desc{color:var(--tx3)}
+.src-badge{font-size:.58rem;border-radius:6px;padding:2px 6px;font-weight:700;margin-left:3px;display:inline-block}
+
+/* ── Stats ── */
+#stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.sbox{background:linear-gradient(135deg,#f5f0ff,#fff0f8);border-radius:var(--rs);padding:11px;border:1.5px solid #ede5fa}
+.sbox-lbl{font-size:.67rem;color:var(--tx3);font-weight:600;margin-bottom:3px}
+.sbox-val{font-size:1.15rem;font-weight:800;color:var(--tx)}
+.sbox-sub{font-size:.64rem;color:var(--tx2);margin-top:2px}
+
+/* ── Buttons ── */
+.btn-row{display:flex;gap:7px;flex-wrap:wrap}
+.btn-s{flex:1;min-width:76px;padding:8px 11px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--bg2);color:var(--tx2);font-size:.77rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-s:hover{border-color:var(--a1);color:var(--a1);background:#f5f0ff}
+.btn-danger{background:#fff0f0;color:#e08080;border-color:#f5c0c0}
+.btn-danger:hover{background:#ffe0e0;border-color:#e08080;color:#c04040}
+
+/* ── Offline / Event notices ── */
+#offline-notice{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--tx);color:#fff;padding:9px 20px;border-radius:50px;font-size:.78rem;font-weight:600;box-shadow:var(--sh2);opacity:0;pointer-events:none;transition:opacity .3s;z-index:300;white-space:nowrap}
+#offline-notice.visible{opacity:1}
+#event-banner{position:fixed;top:148px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#4020a0,#a030d0);color:#fff;padding:9px 22px;border-radius:50px;font-size:.82rem;font-weight:700;box-shadow:0 4px 20px rgba(120,40,200,.5);opacity:0;pointer-events:none;transition:opacity .4s;z-index:149}
+#event-banner.visible{opacity:1}
+
+footer{text-align:center;padding:7px;font-size:.65rem;color:var(--tx3)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#d5cce8;border-radius:3px}
 </style>
 </head>
 <body>
-
 <div id="app">
-  <!-- ===== Header ===== -->
-  <header>
-    <h1>🌫️ HatchMistory</h1>
-    <div class="header-stats">
-      <div class="stat-chip"><span class="icon">💧</span><span id="hdr-gel">0</span></div>
-      <div class="stat-chip"><span class="icon">⚡</span><span id="hdr-gps">0/s</span></div>
-    </div>
-  </header>
 
-  <!-- ===== Mist Bar ===== -->
-  <div id="mist-bar-row">
-    <span id="mist-label">🌫️ 霧濃度</span>
-    <div id="mist-track"><div id="mist-fill" style="width:0%"></div></div>
-    <span id="mist-pct">0%</span>
-    <span id="mist-bonus-label">レア率+0%</span>
+<!-- ══ HEADER ══ -->
+<header>
+  <h1>🌫️ HatchMistory</h1>
+  <div style="display:flex;gap:8px">
+    <div class="hchip"><span>💧</span><span id="hdr-gel">0</span></div>
+    <div class="hchip"><span>⚡</span><span id="hdr-gps">0/s</span></div>
   </div>
+</header>
 
-  <!-- ===== Left Panel ===== -->
-  <div id="left-panel">
-
-    <!-- Egg -->
-    <div class="card" id="egg-area">
-      <div class="card-title">🥚 孵化中の卵</div>
-      <div id="egg-wrap" role="button" aria-label="卵をクリック" tabindex="0">
-        <svg id="egg-svg" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="eggGrad" cx="40%" cy="35%">
-              <stop offset="0%" stop-color="#e8d8ff"/>
-              <stop offset="100%" stop-color="#c0a0e8"/>
-            </radialGradient>
-          </defs>
-          <ellipse cx="70" cy="85" rx="52" ry="62" fill="url(#eggGrad)" stroke="#d0b8f0" stroke-width="2"/>
-          <ellipse cx="52" cy="58" rx="14" ry="9" fill="rgba(255,255,255,0.45)" transform="rotate(-20,52,58)"/>
-          <polyline id="crack1" class="crack" points="70,50 65,60 72,68"/>
-          <polyline id="crack2" class="crack" points="90,70 85,80 92,85"/>
-          <polyline id="crack3" class="crack" points="52,90 58,98 50,105"/>
-          <polyline id="crack4" class="crack" points="70,68 78,78 72,90 80,100"/>
-        </svg>
-      </div>
-      <div id="energy-bar-wrap"><div id="energy-bar" style="width:0%"></div></div>
-      <div id="energy-label">エネルギー: 0 / 100</div>
-      <div id="click-hint">👆 タップして孵化エネルギーを溜めよう！</div>
-    </div>
-
-    <!-- Ranch -->
-    <div class="card">
-      <div class="card-title">🌿 牧場エリア <span style="font-size:0.7rem;color:var(--text3);margin-left:4px;" id="ranch-count-label"></span></div>
-      <div id="ranch-wrap">
-        <div id="ranch-mist"></div>
-        <div id="ranch-empty-hint">まだ住人がいません<br>🥚 孵化させて牧場を賑やかに！</div>
-      </div>
-    </div>
-
-    <!-- Fusion -->
-    <div class="card" id="fusion-panel">
-      <div class="card-title">🧬 合成システム</div>
-      <div id="fusion-slots">
-        <div class="fusion-slot" id="fslot-a">
-          <span id="fslot-a-icon">＋</span>
-          <span class="slot-label">個体A</span>
-        </div>
-        <span class="fusion-plus">＋</span>
-        <div class="fusion-slot" id="fslot-b">
-          <span id="fslot-b-icon">＋</span>
-          <span class="slot-label">個体B</span>
-        </div>
-        <span class="fusion-arrow">→</span>
-        <div class="fusion-result-slot" id="fslot-result">？</div>
-      </div>
-      <button id="btn-fuse" disabled>🧬 融合する</button>
-      <button id="btn-fuse-clear">✕ クリア</button>
-      <div id="fusion-hint">モンスターカードをタップして合成スロットに選択</div>
-    </div>
-
-    <!-- Monsters -->
-    <div class="card">
-      <div class="card-title">🐾 召喚済みモンスター</div>
-      <div id="monsters-grid">
-        <div class="empty-monsters">まだモンスターがいません</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ===== Right Panel ===== -->
-  <div id="right-panel">
-    <div id="tab-bar">
-      <button class="tab-btn active" data-tab="tab-status"><span class="tab-icon">📊</span>状態</button>
-      <button class="tab-btn" data-tab="tab-zukan"><span class="tab-icon">📖</span>図鑑</button>
-      <button class="tab-btn" data-tab="tab-mist"><span class="tab-icon">🌫️</span>霧の書</button>
-      <button class="tab-btn" data-tab="tab-settings"><span class="tab-icon">⚙️</span>設定</button>
-    </div>
-
-    <!-- Status -->
-    <div class="tab-pane active card" id="tab-status">
-      <div class="card-title">📊 ステータス</div>
-      <div id="stats-grid">
-        <div class="stat-box">
-          <div class="stat-box-label">💧 所持ゲル</div>
-          <div class="stat-box-value" id="stat-gel">0</div>
-          <div class="stat-box-sub">生涯: <span id="stat-total-gel">0</span></div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-box-label">⚡ 毎秒収入</div>
-          <div class="stat-box-value" id="stat-gps">0</div>
-          <div class="stat-box-sub">ゲル/秒</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-box-label">🐾 モンスター数</div>
-          <div class="stat-box-value" id="stat-monsters">0</div>
-          <div class="stat-box-sub">種類: <span id="stat-species">0</span></div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-box-label">🥚 孵化回数</div>
-          <div class="stat-box-value" id="stat-hatches">0</div>
-          <div class="stat-box-sub">クリック: <span id="stat-clicks">0</span></div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-box-label">⚡ エネルギー</div>
-          <div class="stat-box-value" id="stat-energy">0</div>
-          <div class="stat-box-sub">最大: <span id="stat-max-energy">100</span></div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-box-label">🧬 合成回数</div>
-          <div class="stat-box-value" id="stat-fusions">0</div>
-          <div class="stat-box-sub">⏱️ <span id="stat-playtime">0秒</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Zukan -->
-    <div class="tab-pane card" id="tab-zukan">
-      <div class="card-title">📖 モンスター図鑑 <span id="zukan-counter" style="margin-left:auto;font-size:0.75rem;color:var(--accent1);font-weight:700;"></span></div>
-      <div id="zukan-list"></div>
-    </div>
-
-    <!-- Mist Lore -->
-    <div class="tab-pane card" id="tab-mist">
-      <div class="card-title">🌫️ 霧の書 — ミストリー</div>
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div class="stat-box">
-          <div class="stat-box-label">現在の霧濃度</div>
-          <div class="stat-box-value" id="mist-detail-pct">0%</div>
-          <div class="stat-box-sub" id="mist-tier-label">霧なし</div>
-        </div>
-        <div style="font-size:0.78rem;color:var(--text2);line-height:1.7;background:#f8f4ff;padding:12px;border-radius:var(--radius-sm);border:1px solid #ede5fa;">
-          <b style="color:var(--text);">霧とは何か？</b><br>
-          霧は放置によって自然に濃くなります。<br>
-          濃度が高いほど、孵化時にレアな個体が生まれやすくなります。<br><br>
-          <b style="color:var(--text);">霧の段階：</b><br>
-          🌑 <b>0–24%</b> 霧なし — レア補正なし<br>
-          🌫️ <b>25–49%</b> 薄霧 — アンコモン率+10%<br>
-          🌀 <b>50–74%</b> 濃霧 — レア率+25%<br>
-          💜 <b>75–99%</b> 深淵霧 — レア率+50%<br>
-          ✨ <b>100%</b> ミストストーム — 次の孵化で必ずレアが出現！<br><br>
-          <span style="color:var(--text3);">※ 孵化すると霧濃度は大きく減少します。</span>
-        </div>
-        <div class="stat-box">
-          <div class="stat-box-label">🌩️ ミストストーム発動回数</div>
-          <div class="stat-box-value" id="stat-storms">0</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Settings -->
-    <div class="tab-pane card" id="tab-settings">
-      <div class="card-title">⚙️ 設定</div>
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div>
-          <div class="stat-box-label" style="margin-bottom:8px;">セーブ / ロード</div>
-          <div class="btn-row">
-            <button class="btn-secondary" id="btn-save">💾 保存</button>
-            <button class="btn-secondary" id="btn-export">📤 エクスポート</button>
-            <button class="btn-secondary" id="btn-import">📥 インポート</button>
-          </div>
-        </div>
-        <div>
-          <div class="stat-box-label" style="margin-bottom:8px;">危険ゾーン</div>
-          <div class="btn-row">
-            <button class="btn-secondary btn-danger" id="btn-reset">🗑️ データリセット</button>
-          </div>
-        </div>
-        <div style="font-size:0.73rem;color:var(--text3);line-height:1.6;">
-          ゲームは30秒ごとに自動セーブされます。<br>
-          次回起動時に放置収入と霧の蓄積が精算されます。
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <footer>HatchMistory v0.2.0 — 配置・合成・霧システム実装済み</footer>
+<!-- ══ RESOURCE BAR ══ -->
+<div id="resource-bar">
+  <div class="res-chip"><span class="ri">💧</span><span class="rv" id="res-gel">0</span><span class="rl">ゲル</span></div>
+  <div class="res-chip"><span class="ri">💎</span><span class="rv" id="res-crystal">0</span><span class="rl">霧結晶</span></div>
+  <div class="res-chip"><span class="ri">🔷</span><span class="rv" id="res-shard">0</span><span class="rl">属性の欠片</span></div>
+  <div class="res-chip" style="margin-left:auto"><span class="ri">📦</span><span class="rv" id="res-gps-chip">0</span><span class="rl">/秒</span></div>
 </div>
 
-<!-- Hatch Overlay -->
+<!-- ══ MIST ROW ══ -->
+<div id="mist-row">
+  <span id="mist-lbl">🌫️ 霧</span>
+  <div id="mist-track"><div id="mist-fill" style="width:0%"></div></div>
+  <span id="mist-pct">0%</span>
+  <span id="mist-tier">霧なし</span>
+</div>
+
+<!-- ══ ENV ROW ══ -->
+<div id="env-row">
+  <div class="env-chip">🌡️ <span class="env-val" id="env-temp">20</span>°C</div>
+  <div class="env-chip">💧 湿度 <span class="env-val" id="env-humid">50</span>%</div>
+  <div class="env-chip" id="env-attr-chip" style="display:none">✨ <span id="env-attr-label">通常</span>属性卵</div>
+</div>
+
+<!-- ══ LEFT PANEL ══ -->
+<div id="left-panel">
+
+  <!-- Egg Card -->
+  <div class="card" id="egg-area">
+    <div class="card-title">🥚 孵化中の卵</div>
+    <div id="egg-wrap" role="button" aria-label="卵をクリック" tabindex="0">
+      <svg id="egg-svg" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="eggGrad" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#e8d8ff"/>
+            <stop offset="100%" stop-color="#c0a0e8"/>
+          </radialGradient>
+          <radialGradient id="eggGradFire" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#ffe0c0"/>
+            <stop offset="100%" stop-color="#e08040"/>
+          </radialGradient>
+          <radialGradient id="eggGradWater" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#c0e8ff"/>
+            <stop offset="100%" stop-color="#4080d0"/>
+          </radialGradient>
+          <radialGradient id="eggGradNature" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#c8f0c0"/>
+            <stop offset="100%" stop-color="#40a050"/>
+          </radialGradient>
+          <radialGradient id="eggGradMist" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#e0d8ff"/>
+            <stop offset="100%" stop-color="#8060d0"/>
+          </radialGradient>
+        </defs>
+        <ellipse id="egg-body" cx="70" cy="85" rx="52" ry="62" fill="url(#eggGrad)" stroke="#d0b8f0" stroke-width="2"/>
+        <ellipse cx="52" cy="58" rx="13" ry="8" fill="rgba(255,255,255,.45)" transform="rotate(-20,52,58)"/>
+        <polyline id="crack1" class="crack" points="70,50 65,60 72,68"/>
+        <polyline id="crack2" class="crack" points="90,70 85,80 92,85"/>
+        <polyline id="crack3" class="crack" points="52,90 58,98 50,105"/>
+        <polyline id="crack4" class="crack" points="70,68 78,78 72,90 80,100"/>
+      </svg>
+    </div>
+    <div id="egg-type-badge">🥚 通常卵</div>
+    <div id="click-progress"><div id="click-bar" style="width:0%"></div></div>
+    <div id="click-cost">クリック: 0 / 100</div>
+    <div id="click-hint">👆 タップして孵化エネルギーを溜めよう！</div>
+  </div>
+
+  <!-- Ranch -->
+  <div class="card">
+    <div class="card-title">🌿 牧場
+      <span style="font-size:.7rem;color:var(--tx3);margin-left:4px" id="ranch-count-lbl"></span>
+      <span style="margin-left:auto;font-size:.7rem;color:var(--tx3)" id="ranch-mode-lbl"></span>
+    </div>
+    <div id="ranch-wrap">
+      <div id="ranch-mist"></div>
+      <div id="ranch-empty-hint">まだ住人がいません<br>🥚 孵化させよう！</div>
+    </div>
+    <div id="expedition-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+
+  <!-- Fusion -->
+  <div class="card" id="fusion-panel">
+    <div class="card-title">🧬 合成システム</div>
+    <div id="fusion-slots">
+      <div class="fslot" id="fsa"><span id="fsa-icon">＋</span><span class="slot-label">個体A</span></div>
+      <span class="fplus">＋</span>
+      <div class="fslot" id="fsb"><span id="fsb-icon">＋</span><span class="slot-label">個体B</span></div>
+      <span class="farrow">→</span>
+      <div class="fresult" id="fsr">？</div>
+    </div>
+    <button id="btn-fuse" disabled>🧬 融合する</button>
+    <button id="btn-fuse-clear">✕ クリア</button>
+    <div id="fusion-hint">モンスターカードをタップして合成スロットに選択</div>
+  </div>
+
+  <!-- Owned Monsters -->
+  <div class="card">
+    <div class="card-title">🐾 所持モンスター</div>
+    <div id="monsters-grid"><div class="empty-msg">まだいません</div></div>
+  </div>
+
+</div><!-- /left-panel -->
+
+<!-- ══ RIGHT PANEL ══ -->
+<div id="right-panel">
+  <div id="tab-bar">
+    <button class="tab-btn active" data-tab="t-status"><span class="ti">📊</span>状態</button>
+    <button class="tab-btn" data-tab="t-zukan"><span class="ti">📖</span>図鑑</button>
+    <button class="tab-btn" data-tab="t-mist"><span class="ti">🌫️</span>霧の書</button>
+    <button class="tab-btn" data-tab="t-recipe"><span class="ti">🧬</span>合成帳</button>
+    <button class="tab-btn" data-tab="t-settings"><span class="ti">⚙️</span>設定</button>
+  </div>
+
+  <!-- Status -->
+  <div class="tab-pane active card" id="t-status">
+    <div class="card-title">📊 ステータス</div>
+    <div id="stats-grid">
+      <div class="sbox"><div class="sbox-lbl">💧 ゲル</div><div class="sbox-val" id="st-gel">0</div><div class="sbox-sub">生涯: <span id="st-tgel">0</span></div></div>
+      <div class="sbox"><div class="sbox-lbl">⚡ /秒</div><div class="sbox-val" id="st-gps">0</div><div class="sbox-sub">ゲル/秒</div></div>
+      <div class="sbox"><div class="sbox-lbl">💎 霧結晶</div><div class="sbox-val" id="st-crystal">0</div><div class="sbox-sub">属性欠片: <span id="st-shard">0</span></div></div>
+      <div class="sbox"><div class="sbox-lbl">🐾 モンスター</div><div class="sbox-val" id="st-mon">0</div><div class="sbox-sub">種類: <span id="st-sp">0</span></div></div>
+      <div class="sbox"><div class="sbox-lbl">🥚 孵化回数</div><div class="sbox-val" id="st-hatch">0</div><div class="sbox-sub">次回コスト: <span id="st-nextcost">100</span>click</div></div>
+      <div class="sbox"><div class="sbox-lbl">🧬 合成回数</div><div class="sbox-val" id="st-fuse">0</div><div class="sbox-sub">⏱️ <span id="st-time">0秒</span></div></div>
+      <div class="sbox"><div class="sbox-lbl">🌩️ ミストストーム</div><div class="sbox-val" id="st-storm">0</div><div class="sbox-sub">回発動</div></div>
+      <div class="sbox"><div class="sbox-lbl">🗺️ 遠征帰還</div><div class="sbox-val" id="st-exp">0</div><div class="sbox-sub">回完了</div></div>
+    </div>
+  </div>
+
+  <!-- Zukan -->
+  <div class="tab-pane card" id="t-zukan">
+    <div class="card-title">📖 図鑑 <span id="zukan-cnt" style="margin-left:auto;font-size:.75rem;color:var(--a1);font-weight:700"></span></div>
+    <div id="zukan-list"></div>
+  </div>
+
+  <!-- Mist Lore -->
+  <div class="tab-pane card" id="t-mist">
+    <div class="card-title">🌫️ 霧の書</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="sbox">
+        <div class="sbox-lbl">現在の霧濃度</div>
+        <div class="sbox-val" id="md-pct">0%</div>
+        <div class="sbox-sub" id="md-tier">霧なし</div>
+      </div>
+      <div style="font-size:.76rem;color:var(--tx2);line-height:1.75;background:#f8f4ff;padding:11px;border-radius:var(--rs);border:1px solid #ede5fa">
+        <b style="color:var(--tx)">霧とは？</b><br>
+        放置により自然に濃縮。濃度が高いほどレア孵化率が上昇し、霧結晶も生成されます。<br><br>
+        <b style="color:var(--tx)">霧の段階：</b><br>
+        🌑 <b>0–24%</b> 霧なし<br>🌫️ <b>25–49%</b> 薄霧 — アンコモン率+10%<br>🌀 <b>50–74%</b> 濃霧 — レア率+25%, 結晶生成<br>💜 <b>75–99%</b> 深淵霧 — レア率+50%<br>✨ <b>100%</b> ミストストーム — レア確定！
+      </div>
+      <div class="sbox"><div class="sbox-lbl">ストーム発動</div><div class="sbox-val" id="md-storm">0</div></div>
+    </div>
+  </div>
+
+  <!-- Recipe Book -->
+  <div class="tab-pane card" id="t-recipe">
+    <div class="card-title">🧬 合成帳</div>
+    <div id="recipe-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="tab-pane card" id="t-settings">
+    <div class="card-title">⚙️ 設定</div>
+    <div style="display:flex;flex-direction:column;gap:13px">
+      <div>
+        <div class="sbox-lbl" style="margin-bottom:7px">モード</div>
+        <div class="btn-row">
+          <button class="btn-s" id="btn-mode-easy">🌸 かんたん</button>
+          <button class="btn-s" id="btn-mode-hard">⚔️ ハード</button>
+        </div>
+        <div id="mode-desc" style="font-size:.7rem;color:var(--tx3);margin-top:6px"></div>
+      </div>
+      <div>
+        <div class="sbox-lbl" style="margin-bottom:7px">セーブ / ロード</div>
+        <div class="btn-row">
+          <button class="btn-s" id="btn-save">💾 保存</button>
+          <button class="btn-s" id="btn-export">📤 Export</button>
+          <button class="btn-s" id="btn-import">📥 Import</button>
+        </div>
+      </div>
+      <div>
+        <div class="btn-row">
+          <button class="btn-s btn-danger" id="btn-reset">🗑️ リセット</button>
+        </div>
+      </div>
+      <div style="font-size:.7rem;color:var(--tx3);line-height:1.7">
+        ゲームは30秒ごとに自動保存されます。<br>
+        次回起動時に放置分・霧・遠征が精算されます。
+      </div>
+    </div>
+  </div>
+</div><!-- /right-panel -->
+
+<footer>HatchMistory v0.3.0 — 孵化コスト漸増 / 素材 / 属性卵 / 遠征 / 役割システム</footer>
+</div><!-- /app -->
+
+<!-- Special hatch overlay (first-time / legendary) -->
 <div id="hatch-overlay">
-  <div id="hatch-monster-img"></div>
-  <div id="hatch-title">新しいモンスター誕生！</div>
+  <div id="hatch-mon-img"></div>
+  <div id="hatch-title"></div>
   <div id="hatch-rarity"></div>
   <div id="hatch-desc"></div>
   <button id="hatch-ok">やった！</button>
 </div>
 
-<!-- Mist overlay -->
 <div id="mist-overlay"></div>
-<!-- Offline notice -->
 <div id="offline-notice"></div>
-<!-- Event banner -->
-<div id="event-banner"><span id="event-banner-text"></span></div>
+<div id="event-banner"></div>
+<div id="toast-wrap"></div>
 
 <script>
 'use strict';
+/* ================================================================
+   MODULE: CONFIG
+   全定義データ。拡張はここだけ。
+================================================================ */
+const CONFIG = (() => {
+  const DIFFICULTY = {
+    easy: { hatchCostBase:80, hatchCostInc:3, mistRiseRate:.4, expDuration:90, label:'🌸 かんたん' },
+    hard: { hatchCostBase:120, hatchCostInc:8, mistRiseRate:.7, expDuration:180, label:'⚔️ ハード' },
+  };
 
-/* ============================================================
-   DATA DEFINITIONS
-   ============================================================ */
+  /* role definitions */
+  const ROLES = {
+    producer:  { label:'生産', color:'#a8d8b0', desc:'ゲル生産効率+20%', emoji:'💧' },
+    explorer:  { label:'探索', color:'#a8c8f8', desc:'遠征報酬+50%',    emoji:'🗺️' },
+    hatcher:   { label:'孵化', color:'#f5c8d8', desc:'孵化コスト-10%',  emoji:'🥚' },
+    mist:      { label:'霧',   color:'#d0c8f8', desc:'霧生成+30%',      emoji:'🌫️' },
+  };
 
-// Base monsters (original 4 preserved)
-const BASE_MONSTER_DEFS = [
-  {
-    id: 'slime_green',
-    name: 'グリーンスライム',
-    emoji: '🟢',
-    imagePath: 'images/slime_green.png',
-    description: '草原に生息する愛らしいスライム。のんびり屋だが、意外とタフ。ゲルを毎秒少しずつ生産する。',
-    rarity: 'common',
-    gelPerSec: 1,
-    hatchWeight: 80,
-    hatchEnergyCost: 100,
-    bgColor: '#b8e8b0',
-    source: 'hatch',
-    fusionIngredients: null,
-  },
-  {
-    id: 'slime_pink',
-    name: 'ピンクスライム',
-    emoji: '🩷',
-    imagePath: 'images/slime_pink.png',
-    description: '甘い香りを放つ珍しいスライム。感情豊かで、飼い主に懐きやすい。',
-    rarity: 'uncommon',
-    gelPerSec: 3,
-    hatchWeight: 30,
-    hatchEnergyCost: 100,
-    bgColor: '#f5c8d8',
-    source: 'hatch',
-    fusionIngredients: null,
-  },
-  {
-    id: 'slime_blue',
-    name: 'ブルースライム',
-    emoji: '🔵',
-    imagePath: 'images/slime_blue.png',
-    description: '水辺に住む知性派スライム。冷静沈着で判断が速い。ゲルの生産量も優秀。',
-    rarity: 'uncommon',
-    gelPerSec: 5,
-    hatchWeight: 20,
-    hatchEnergyCost: 100,
-    bgColor: '#a8c8f8',
-    source: 'hatch',
-    fusionIngredients: null,
-  },
-  {
-    id: 'slime_gold',
-    name: 'ゴールドスライム',
-    emoji: '✨',
-    imagePath: 'images/slime_gold.png',
-    description: '伝説のスライム。その体は純金のように輝き、触れるものすべてをゲルに変えるとも言われる。',
-    rarity: 'rare',
-    gelPerSec: 20,
-    hatchWeight: 5,
-    hatchEnergyCost: 100,
-    bgColor: '#f8e080',
-    source: 'hatch',
-    fusionIngredients: null,
-  },
-];
+  /* attribute egg rules: [{ condition(env)→bool, attr, gradient, label }] */
+  const ATTR_RULES = [
+    { attr:'fire',   label:'🔥 炎',   grad:'eggGradFire',  cond: e => e.temperature >= 70 },
+    { attr:'water',  label:'💧 水',   grad:'eggGradWater', cond: e => e.humidity >= 80 },
+    { attr:'nature', label:'🌿 自然', grad:'eggGradNature',cond: e => e.humidity >= 60 && e.temperature <= 30 },
+    { attr:'mist',   label:'🌫️ 霧',  grad:'eggGradMist',  cond: e => e.mistDensity >= 75 },
+  ];
 
-// Fusion-only monsters (discovered by merging)
-const FUSION_MONSTER_DEFS = [
-  {
-    id: 'slime_forest',
-    name: 'フォレストスライム',
-    emoji: '🌿',
-    imagePath: 'images/slime_forest.png',
-    description: '緑とピンクが融合し、大自然の息吹を宿した新種。花の蜜を好む。',
-    rarity: 'uncommon',
-    gelPerSec: 6,
-    hatchWeight: 0,
-    hatchEnergyCost: 0,
-    bgColor: '#90e090',
-    source: 'fusion',
-    fusionIngredients: ['slime_green', 'slime_pink'],
-  },
-  {
-    id: 'slime_ocean',
-    name: 'オーシャンスライム',
-    emoji: '🌊',
-    imagePath: 'images/slime_ocean.png',
-    description: 'ピンクとブルーが溶け合った海色のスライム。波の音を奏でながら泳ぐ。',
-    rarity: 'rare',
-    gelPerSec: 12,
-    hatchWeight: 0,
-    hatchEnergyCost: 0,
-    bgColor: '#80c8e8',
-    source: 'fusion',
-    fusionIngredients: ['slime_pink', 'slime_blue'],
-  },
-  {
-    id: 'slime_storm',
-    name: 'ストームスライム',
-    emoji: '⚡',
-    imagePath: 'images/slime_storm.png',
-    description: 'ブルーとゴールドが雷で融合した電撃スライム。触ると少しビリビリする。',
-    rarity: 'rare',
-    gelPerSec: 25,
-    hatchWeight: 0,
-    hatchEnergyCost: 0,
-    bgColor: '#c8d860',
-    source: 'fusion',
-    fusionIngredients: ['slime_blue', 'slime_gold'],
-  },
-  {
-    id: 'slime_aurora',
-    name: 'オーロラスライム',
-    emoji: '🌈',
-    imagePath: 'images/slime_aurora.png',
-    description: '緑とゴールドが混ざり合い、神秘的な七色の輝きを放つ最高峰のスライム。',
-    rarity: 'legendary',
-    gelPerSec: 50,
-    hatchWeight: 0,
-    hatchEnergyCost: 0,
-    bgColor: '#e0c0ff',
-    source: 'fusion',
-    fusionIngredients: ['slime_green', 'slime_gold'],
-  },
-  {
-    id: 'slime_void',
-    name: 'ヴォイドスライム',
-    emoji: '🌑',
-    imagePath: 'images/slime_void.png',
-    description: '2体のゴールドスライムが飽和し、虚無へと至った禁断の存在。見た者は幸運になると言われる。',
-    rarity: 'legendary',
-    gelPerSec: 100,
-    hatchWeight: 0,
-    hatchEnergyCost: 0,
-    bgColor: '#303050',
-    source: 'fusion',
-    fusionIngredients: ['slime_gold', 'slime_gold'],
-  },
-];
+  /* expedition reward table */
+  const EXP_REWARDS = [
+    { id:'crystal', weight:50, label:'霧結晶', min:1, max:4 },
+    { id:'shard',   weight:30, label:'属性の欠片', min:1, max:2 },
+    { id:'gel',     weight:20, label:'ゲル', min:30, max:120 },
+  ];
 
-// Mist-only rare monsters (only available via Mist Storm)
-const MIST_MONSTER_DEFS = [
-  {
-    id: 'slime_mist',
-    name: 'ミストスライム',
-    emoji: '🌫️',
-    imagePath: 'images/slime_mist.png',
-    description: '深い霧の中から現れる神秘のスライム。霧が100%に達した時にのみ誕生できる。',
-    rarity: 'legendary',
-    gelPerSec: 40,
-    hatchWeight: 0,
-    hatchEnergyCost: 100,
-    bgColor: '#d0d0f0',
-    source: 'mist',
-    fusionIngredients: null,
-  },
-];
+  /* Base monsters */
+  const BASE_MONSTERS = [
+    { id:'slime_green', name:'グリーンスライム', emoji:'🟢', img:'images/slime_green.png',
+      desc:'草原に生息する愛らしいスライム。のんびり屋だが意外とタフ。',
+      rarity:'common', gps:1, w:80, bg:'#b8e8b0', source:'hatch', role:'producer',
+      attrBonus:null, fusion:null },
+    { id:'slime_pink', name:'ピンクスライム', emoji:'🩷', img:'images/slime_pink.png',
+      desc:'甘い香りを放つ珍しいスライム。感情豊かで飼い主に懐きやすい。',
+      rarity:'uncommon', gps:3, w:30, bg:'#f5c8d8', source:'hatch', role:'hatcher',
+      attrBonus:null, fusion:null },
+    { id:'slime_blue', name:'ブルースライム', emoji:'🔵', img:'images/slime_blue.png',
+      desc:'水辺に住む知性派スライム。冷静沈着でゲルの生産量も優秀。',
+      rarity:'uncommon', gps:5, w:20, bg:'#a8c8f8', source:'hatch', role:'explorer',
+      attrBonus:null, fusion:null },
+    { id:'slime_gold', name:'ゴールドスライム', emoji:'✨', img:'images/slime_gold.png',
+      desc:'伝説のスライム。その体は純金のように輝き触れるものをゲルに変える。',
+      rarity:'rare', gps:20, w:5, bg:'#f8e080', source:'hatch', role:'producer',
+      attrBonus:null, fusion:null },
+    /* Attribute variants */
+    { id:'slime_fire', name:'フレイムスライム', emoji:'🔥', img:'images/slime_fire.png',
+      desc:'炎属性卵から生まれた熱血スライム。体温が非常に高く、近づくと暖かい。',
+      rarity:'uncommon', gps:8, w:0, bg:'#f8b880', source:'attr_fire', role:'producer',
+      attrBonus:'fire', fusion:null },
+    { id:'slime_aqua', name:'アクアスライム', emoji:'💦', img:'images/slime_aqua.png',
+      desc:'水属性卵から誕生した澄んだ碧のスライム。雨の日に特に輝く。',
+      rarity:'uncommon', gps:8, w:0, bg:'#90d8f0', source:'attr_water', role:'explorer',
+      attrBonus:'water', fusion:null },
+    { id:'slime_nature', name:'ナチュールスライム', emoji:'🌿', img:'images/slime_nature.png',
+      desc:'自然属性卵から生まれた緑の精霊。植物と会話できると噂される。',
+      rarity:'uncommon', gps:8, w:0, bg:'#a0e8a0', source:'attr_nature', role:'mist',
+      attrBonus:'nature', fusion:null },
+    { id:'slime_mist_attr', name:'ミストリアスライム', emoji:'🌌', img:'images/slime_mist_attr.png',
+      desc:'深淵霧から生まれた神秘の存在。その姿は霧の中で揺らめく。',
+      rarity:'rare', gps:18, w:0, bg:'#c8b8f8', source:'attr_mist', role:'mist',
+      attrBonus:'mist', fusion:null },
+  ];
 
-// All definitions merged
-let ALL_MONSTER_DEFS = [...BASE_MONSTER_DEFS, ...FUSION_MONSTER_DEFS, ...MIST_MONSTER_DEFS];
+  /* Fusion monsters */
+  const FUSION_MONSTERS = [
+    { id:'slime_forest', name:'フォレストスライム', emoji:'🌿', img:'images/slime_forest.png',
+      desc:'緑とピンクが融合し大自然の息吹を宿した新種。花の蜜を好む。',
+      rarity:'uncommon', gps:6, w:0, bg:'#90e090', source:'fusion', role:'mist',
+      attrBonus:null, fusion:['slime_green','slime_pink'] },
+    { id:'slime_ocean', name:'オーシャンスライム', emoji:'🌊', img:'images/slime_ocean.png',
+      desc:'ピンクとブルーが溶け合った海色のスライム。波の音を奏でる。',
+      rarity:'rare', gps:12, w:0, bg:'#80c8e8', source:'fusion', role:'explorer',
+      attrBonus:null, fusion:['slime_pink','slime_blue'] },
+    { id:'slime_storm', name:'ストームスライム', emoji:'⚡', img:'images/slime_storm.png',
+      desc:'ブルーとゴールドが雷で融合した電撃スライム。触るとビリビリする。',
+      rarity:'rare', gps:25, w:0, bg:'#c8d860', source:'fusion', role:'producer',
+      attrBonus:null, fusion:['slime_blue','slime_gold'] },
+    { id:'slime_aurora', name:'オーロラスライム', emoji:'🌈', img:'images/slime_aurora.png',
+      desc:'緑とゴールドが混ざり七色の輝きを放つ最高峰のスライム。',
+      rarity:'legendary', gps:50, w:0, bg:'#e0c0ff', source:'fusion', role:'producer',
+      attrBonus:null, fusion:['slime_green','slime_gold'] },
+    { id:'slime_void', name:'ヴォイドスライム', emoji:'🌑', img:'images/slime_void.png',
+      desc:'2体のゴールドが飽和し虚無へ至った禁断の存在。見た者は幸運になる。',
+      rarity:'legendary', gps:100, w:0, bg:'#303050', source:'fusion', role:'explorer',
+      attrBonus:null, fusion:['slime_gold','slime_gold'] },
+  ];
 
-const RARITY_COLOR = {
-  common: '#a0c890',
-  uncommon: '#90b0e0',
-  rare: '#e0c050',
-  legendary: '#e090d0',
-};
-const RARITY_LABEL = {
-  common: 'コモン',
-  uncommon: 'アンコモン',
-  rare: 'レア',
-  legendary: 'レジェンド',
-};
+  /* Mist-storm only */
+  const MIST_MONSTERS = [
+    { id:'slime_mist_pure', name:'ピュアミストスライム', emoji:'🌫️', img:'images/slime_mist_pure.png',
+      desc:'ミストストームの瞬間にのみ誕生できる神秘のスライム。',
+      rarity:'legendary', gps:40, w:0, bg:'#d0d0f0', source:'mist', role:'mist',
+      attrBonus:null, fusion:null },
+  ];
 
-/* ============================================================
-   STATE
-   ============================================================ */
-function createInitialState() {
+  const ALL_MONSTERS = [...BASE_MONSTERS, ...FUSION_MONSTERS, ...MIST_MONSTERS];
+
+  const RARITY_COLOR = { common:'#a0c890', uncommon:'#90b0e0', rare:'#e0c050', legendary:'#e090d0' };
+  const RARITY_LABEL = { common:'コモン', uncommon:'アンコモン', rare:'レア', legendary:'レジェンド' };
+
+  return Object.freeze({ DIFFICULTY, ROLES, ATTR_RULES, EXP_REWARDS, ALL_MONSTERS, RARITY_COLOR, RARITY_LABEL });
+})();
+
+/* ================================================================
+   MODULE: EventBus  ― モジュール間通信
+================================================================ */
+const EventBus = (() => {
+  const listeners = {};
   return {
-    version: 2,
-    gel: 0,
-    totalGelEarned: 0,
-    energy: 0,
-    maxEnergy: 100,
-    energyPerClick: 10,
-    totalClicks: 0,
-    totalHatches: 0,
-    totalFusions: 0,
-    totalMistStorms: 0,
-    mistDensity: 0,       // 0–100
-    mistRiseRate: 0.5,    // per second while idle
-    monsters: {},         // { [monsterId]: count }
-    // Ranch placement data: [{ id, monsterId, x, y, size, animDelay }]
-    ranchSlimes: [],
-    // Fusion selection: [monsterId|null, monsterId|null]
-    fusionSlots: [null, null],
-    playTimeSeconds: 0,
-    lastSaveTimestamp: Date.now(),
-    lastTickTimestamp: Date.now(),
+    on(evt, fn) { (listeners[evt] = listeners[evt] || []).push(fn); },
+    emit(evt, data) { (listeners[evt] || []).forEach(fn => fn(data)); },
   };
-}
+})();
 
-let state = createInitialState();
+/* ================================================================
+   MODULE: StateManager
+================================================================ */
+const StateManager = (() => {
+  const SAVE_KEY = 'hatchMistory_v3';
 
-/* ============================================================
-   PERSISTENCE
-   ============================================================ */
-const SAVE_KEY = 'hatchMistory_v2';
-
-function saveGame(silent = false) {
-  state.lastSaveTimestamp = Date.now();
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-    if (!silent) showOfflineNotice('💾 セーブしました！');
-  } catch(e) { console.error('Save failed', e); }
-}
-
-function loadGame() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return false;
-    const saved = JSON.parse(raw);
-    // Merge to handle new fields gracefully
-    state = Object.assign(createInitialState(), saved);
-    // Ensure new state fields exist
-    if (!Array.isArray(state.ranchSlimes)) state.ranchSlimes = [];
-    if (!Array.isArray(state.fusionSlots)) state.fusionSlots = [null, null];
-    if (typeof state.mistDensity !== 'number') state.mistDensity = 0;
-    if (typeof state.totalFusions !== 'number') state.totalFusions = 0;
-    if (typeof state.totalMistStorms !== 'number') state.totalMistStorms = 0;
-    return true;
-  } catch(e) { console.error('Load failed', e); return false; }
-}
-
-function resetGame() {
-  if (!confirm('本当にリセットしますか？すべてのデータが消えます。')) return;
-  localStorage.removeItem(SAVE_KEY);
-  state = createInitialState();
-  renderAll();
-  showOfflineNotice('🗑️ リセットしました');
-}
-
-function exportSave() {
-  const data = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
-  try {
-    navigator.clipboard.writeText(data);
-    showOfflineNotice('📤 クリップボードにコピーしました');
-  } catch {
-    prompt('セーブデータ（コピーしてください）:', data);
+  function createInitial() {
+    return {
+      version: 3,
+      difficulty: 'easy',
+      resources: { gel: 0, totalGel: 0, mistCrystal: 0, elementalShard: 0 },
+      hatchClicks: 0,        // current progress clicks
+      totalHatches: 0,
+      totalFusions: 0,
+      totalMistStorms: 0,
+      totalExpeditions: 0,
+      totalClicks: 0,
+      env: { temperature: 20, humidity: 50, mistDensity: 0 },
+      monsters: {},          // { id: count }
+      discovered: [],        // ids ever obtained
+      ranchSlimes: [],       // [{uid,monsterId,x,y,size,animDelay,onExpedition}]
+      expeditions: [],       // [{uid,slimeUid,monsterId,returnAt,rewardType,rewardAmt,label}]
+      fusionSlots: [null, null],
+      playTimeSec: 0,
+      lastSaveTs: Date.now(),
+    };
   }
-}
 
-function importSave() {
-  const data = prompt('セーブデータを貼り付けてください:');
-  if (!data) return;
-  try {
-    const parsed = JSON.parse(decodeURIComponent(escape(atob(data))));
-    state = Object.assign(createInitialState(), parsed);
-    renderAll();
-    showOfflineNotice('📥 インポート成功！');
-  } catch(e) { alert('セーブデータが正しくありません。'); }
-}
+  let _state = createInitial();
 
-/* ============================================================
-   MIST SYSTEM
-   ============================================================ */
-function getMistTier() {
-  const m = state.mistDensity;
-  if (m >= 100) return { tier: 4, label: '✨ ミストストーム！', rareBonus: 1.0, color: '#e0a0ff' };
-  if (m >= 75)  return { tier: 3, label: '💜 深淵霧', rareBonus: 0.5, color: '#c080f0' };
-  if (m >= 50)  return { tier: 2, label: '🌀 濃霧', rareBonus: 0.25, color: '#9060d0' };
-  if (m >= 25)  return { tier: 1, label: '🌫️ 薄霧', rareBonus: 0.1, color: '#8080c0' };
-  return { tier: 0, label: '🌑 霧なし', rareBonus: 0, color: '#808080' };
-}
+  function get() { return _state; }
 
-function updateMistUI() {
-  const pct = Math.min(100, state.mistDensity);
-  document.getElementById('mist-fill').style.width = pct + '%';
-  document.getElementById('mist-pct').textContent = Math.floor(pct) + '%';
+  function save(silent = false) {
+    _state.lastSaveTs = Date.now();
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(_state));
+      if (!silent) EventBus.emit('notice', '💾 セーブしました！');
+    } catch(e) { console.error('Save failed', e); }
+  }
 
-  const tier = getMistTier();
-  const bonusPct = Math.round(tier.rareBonus * 100);
-  document.getElementById('mist-bonus-label').textContent = `レア率+${bonusPct}%`;
-  document.getElementById('mist-detail-pct').textContent = Math.floor(pct) + '%';
-  document.getElementById('mist-tier-label').textContent = tier.label;
+  function load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return false;
+      const saved = JSON.parse(raw);
+      _state = Object.assign(createInitial(), saved);
+      // Ensure nested objects
+      _state.resources  = Object.assign({ gel:0,totalGel:0,mistCrystal:0,elementalShard:0 }, saved.resources);
+      _state.env        = Object.assign({ temperature:20,humidity:50,mistDensity:0 }, saved.env);
+      if (!Array.isArray(_state.ranchSlimes))  _state.ranchSlimes = [];
+      if (!Array.isArray(_state.expeditions))  _state.expeditions = [];
+      if (!Array.isArray(_state.fusionSlots))  _state.fusionSlots = [null, null];
+      if (!Array.isArray(_state.discovered))   _state.discovered = [];
+      return true;
+    } catch(e) { console.error('Load failed', e); return false; }
+  }
 
-  // Visual mist overlay
-  const opacity = (pct / 100) * 0.18;
-  document.documentElement.style.setProperty('--mist-opacity', opacity);
-  document.getElementById('mist-overlay').style.background =
-    `radial-gradient(ellipse at 50% 0%, rgba(140,80,220,${opacity}) 0%, transparent 70%)`;
+  function reset() {
+    if (!confirm('本当にリセットしますか？')) return;
+    localStorage.removeItem(SAVE_KEY);
+    _state = createInitial();
+    EventBus.emit('stateReset');
+    EventBus.emit('notice', '🗑️ リセットしました');
+  }
 
-  // Ranch mist
-  const ranchOpacity = (pct / 100) * 0.35;
-  document.getElementById('ranch-mist').style.background =
-    `linear-gradient(180deg, rgba(180,120,255,${ranchOpacity}) 0%, rgba(120,60,200,${ranchOpacity*0.5}) 100%)`;
-}
+  function exportData() {
+    const data = btoa(unescape(encodeURIComponent(JSON.stringify(_state))));
+    try { navigator.clipboard.writeText(data); EventBus.emit('notice', '📤 コピーしました'); }
+    catch { prompt('エクスポートデータ:', data); }
+  }
 
-/* ============================================================
-   RANCH / PLACEMENT SYSTEM
-   ============================================================ */
-const RANCH_MAX_SLIMES = 20;
+  function importData() {
+    const raw = prompt('セーブデータを貼り付けてください:');
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(decodeURIComponent(escape(atob(raw))));
+      _state = Object.assign(createInitial(), parsed);
+      EventBus.emit('stateReset');
+      EventBus.emit('notice', '📥 インポート成功！');
+    } catch { alert('データが正しくありません'); }
+  }
 
-function syncRanchSlimes() {
-  // Build expected list from state.monsters
-  const allIndividuals = [];
-  for (const [mId, count] of Object.entries(state.monsters)) {
-    for (let i = 0; i < count; i++) {
-      allIndividuals.push(mId);
+  function setDifficulty(mode) {
+    _state.difficulty = mode;
+    EventBus.emit('notice', `難易度: ${CONFIG.DIFFICULTY[mode].label}`);
+  }
+
+  return { get, save, load, reset, exportData, importData, setDifficulty };
+})();
+
+/* ================================================================
+   MODULE: GameEngine  ― 純粋なゲームロジック
+================================================================ */
+const GameEngine = (() => {
+  /* helpers */
+  function diff() { return CONFIG.DIFFICULTY[StateManager.get().difficulty]; }
+
+  function hatchCost() {
+    const s = StateManager.get();
+    const d = diff();
+    return d.hatchCostBase + s.totalHatches * d.hatchCostInc;
+  }
+
+  function calcGPS() {
+    const s = StateManager.get();
+    let gps = 0;
+    const hatcherCount = CONFIG.ALL_MONSTERS
+      .filter(m => m.role === 'hatcher')
+      .reduce((a, m) => a + (s.monsters[m.id] || 0), 0);
+    const hatchBonus = 1 + hatcherCount * 0.1;
+
+    for (const [id, cnt] of Object.entries(s.monsters)) {
+      const def = CONFIG.ALL_MONSTERS.find(m => m.id === id);
+      if (!def) continue;
+      let perUnit = def.gps;
+      if (def.role === 'producer') perUnit *= 1.2;
+      gps += perUnit * cnt * (def.role === 'hatcher' ? hatchBonus : 1);
+    }
+    return gps;
+  }
+
+  function totalMonsters() {
+    return Object.values(StateManager.get().monsters).reduce((a, b) => a + b, 0);
+  }
+
+  /* Environment → egg attribute */
+  function currentAttr() {
+    const env = StateManager.get().env;
+    for (const rule of CONFIG.ATTR_RULES) {
+      if (rule.cond(env)) return rule;
+    }
+    return null;
+  }
+
+  /* Weighted random pick */
+  function weightedPick(pool) {
+    const total = pool.reduce((a, m) => a + m.w, 0);
+    let r = Math.random() * total;
+    for (const m of pool) { r -= m.w; if (r <= 0) return m; }
+    return pool[0];
+  }
+
+  function pickMonster() {
+    const s = StateManager.get();
+    const env = s.env;
+    const mistTier = getMistTier(env.mistDensity);
+    const attr = currentAttr();
+
+    /* Mist storm: force rare or mist-exclusive */
+    if (mistTier.tier === 4) {
+      s.totalMistStorms++;
+      env.mistDensity = Math.max(0, env.mistDensity - 40);
+      const mistOnly = CONFIG.ALL_MONSTERS.filter(m => m.source === 'mist');
+      if (Math.random() < 0.5 && mistOnly.length) return mistOnly[0];
+    }
+
+    /* Attribute egg */
+    if (attr) {
+      const attrMonsters = CONFIG.ALL_MONSTERS.filter(m => m.attrBonus === attr.attr);
+      if (attrMonsters.length && Math.random() < 0.6) {
+        return attrMonsters[Math.floor(Math.random() * attrMonsters.length)];
+      }
+    }
+
+    /* Base pool with mist rarity boost */
+    const rb = mistTier.rareBonus;
+    const pool = CONFIG.ALL_MONSTERS
+      .filter(m => m.w > 0)
+      .map(m => {
+        let w = m.w;
+        if (m.rarity === 'rare' || m.rarity === 'legendary') w *= (1 + rb);
+        return { ...m, w };
+      });
+    return weightedPick(pool);
+  }
+
+  function getMistTier(d) {
+    if (d >= 100) return { tier:4, label:'✨ ミストストーム！', rareBonus:1.0, color:'#e0a0ff' };
+    if (d >= 75)  return { tier:3, label:'💜 深淵霧', rareBonus:.5, color:'#c080f0' };
+    if (d >= 50)  return { tier:2, label:'🌀 濃霧', rareBonus:.25, color:'#9060d0' };
+    if (d >= 25)  return { tier:1, label:'🌫️ 薄霧', rareBonus:.1, color:'#8080c0' };
+    return { tier:0, label:'🌑 霧なし', rareBonus:0, color:'#808080' };
+  }
+
+  /* click on egg */
+  function handleEggClick(event) {
+    const s = StateManager.get();
+    s.totalClicks++;
+    s.hatchClicks++;
+    const cost = hatchCost();
+
+    EventBus.emit('eggClicked', { x: event?.clientX, y: event?.clientY, energy: s.hatchClicks, cost });
+
+    if (s.hatchClicks >= cost) {
+      s.hatchClicks = 0;
+      doHatch();
     }
   }
 
-  // Remove excess ranch slimes
-  const expectedCount = Math.min(allIndividuals.length, RANCH_MAX_SLIMES);
-  state.ranchSlimes = state.ranchSlimes.filter(rs =>
-    allIndividuals.includes(rs.monsterId)
-  );
+  function doHatch() {
+    const s = StateManager.get();
+    const monster = pickMonster();
+    const isNew = !s.discovered.includes(monster.id);
 
-  // Add missing ones with random positions
-  const existingCount = state.ranchSlimes.length;
-  const toAdd = expectedCount - existingCount;
+    s.monsters[monster.id] = (s.monsters[monster.id] || 0) + 1;
+    if (isNew) s.discovered.push(monster.id);
+    s.totalHatches++;
 
-  for (let i = 0; i < toAdd; i++) {
-    // Pick a monster not yet fully represented
-    const placedCounts = {};
-    state.ranchSlimes.forEach(rs => {
-      placedCounts[rs.monsterId] = (placedCounts[rs.monsterId] || 0) + 1;
-    });
+    // Mist consumption
+    s.env.mistDensity = Math.max(0, s.env.mistDensity - 15);
 
-    let target = null;
-    for (const mId of allIndividuals) {
-      const owned = state.monsters[mId] || 0;
-      const placed = placedCounts[mId] || 0;
-      if (placed < owned) { target = mId; break; }
+    // Mist crystals from hatch if mist > 50
+    if (s.env.mistDensity >= 50) {
+      const crystals = 1 + Math.floor(s.env.mistDensity / 30);
+      s.resources.mistCrystal += crystals;
     }
-    if (!target) break;
 
-    const pos = findNonOverlappingPosition();
-    state.ranchSlimes.push({
-      id: `rs_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-      monsterId: target,
-      x: pos.x,
-      y: pos.y,
-      size: 36 + Math.floor(Math.random() * 16),
-      animDelay: (Math.random() * 2).toFixed(2),
-    });
-    placedCounts[target] = (placedCounts[target] || 0) + 1;
+    // Hatcher role reduces cost for next hatch
+    const hatcherBonus = CONFIG.ALL_MONSTERS
+      .filter(m => m.role === 'hatcher')
+      .reduce((a, m) => a + (s.monsters[m.id] || 0), 0);
+    // (effect reflected in hatchCost() via monster count)
+
+    EventBus.emit('hatched', { monster, isNew });
   }
-}
 
-function findNonOverlappingPosition(attempts = 30) {
-  const W = 100, H = 100;
-  const minDist = 14;
-  for (let a = 0; a < attempts; a++) {
-    const x = 5 + Math.random() * 80;
-    const y = 15 + Math.random() * 60;
-    let ok = true;
-    for (const rs of state.ranchSlimes) {
-      const dx = rs.x - x, dy = rs.y - y;
-      if (Math.sqrt(dx*dx + dy*dy) < minDist) { ok = false; break; }
+  /* Fusion */
+  function attemptFusion() {
+    const s = StateManager.get();
+    const [idA, idB] = s.fusionSlots;
+    if (!idA || !idB) return;
+
+    const checkCount = (id) => (s.monsters[id] || 0);
+    if (idA === idB && checkCount(idA) < 2) {
+      EventBus.emit('notice', '⚠️ 同種合成には2体必要'); return;
     }
-    if (ok) return { x, y };
-  }
-  return { x: 5 + Math.random() * 80, y: 15 + Math.random() * 60 };
-}
-
-function renderRanch() {
-  const wrap = document.getElementById('ranch-wrap');
-  // Remove old slime elements (keep mist div and hint)
-  wrap.querySelectorAll('.ranch-slime').forEach(el => el.remove());
-
-  const hint = document.getElementById('ranch-empty-hint');
-  hint.style.display = state.ranchSlimes.length === 0 ? 'block' : 'none';
-
-  document.getElementById('ranch-count-label').textContent =
-    state.ranchSlimes.length > 0 ? `(${state.ranchSlimes.length}体)` : '';
-
-  for (const rs of state.ranchSlimes) {
-    const def = ALL_MONSTER_DEFS.find(m => m.id === rs.monsterId);
-    if (!def) continue;
-
-    const el = document.createElement('div');
-    el.className = 'ranch-slime';
-    el.style.cssText = `left:${rs.x}%;top:${rs.y}%;animation-delay:-${rs.animDelay}s;`;
-    el.dataset.ranchId = rs.id;
-
-    el.innerHTML = `
-      <div class="ranch-slime-body" style="width:${rs.size}px;height:${rs.size}px;background:${def.bgColor};">
-        ${buildMonsterImgTag(def, rs.size * 0.65)}
-      </div>
-      <div class="ranch-slime-name">${def.name.replace('スライム','')}</div>
-    `;
-    el.addEventListener('click', () => showOfflineNotice(`🐾 ${def.name} がうごめいた！`));
-    wrap.appendChild(el);
-  }
-}
-
-/* ============================================================
-   FUSION SYSTEM
-   ============================================================ */
-function selectForFusion(monsterId) {
-  const slots = state.fusionSlots;
-  if (slots[0] === null) {
-    slots[0] = monsterId;
-  } else if (slots[1] === null && monsterId !== slots[0]) {
-    slots[1] = monsterId;
-  } else if (slots[1] === null && monsterId === slots[0]) {
-    // Allow same species fusion (e.g., gold + gold)
-    const count = state.monsters[monsterId] || 0;
-    if (count >= 2) slots[1] = monsterId;
-    else { showOfflineNotice('⚠️ 同種の合成には2体以上必要です'); return; }
-  } else {
-    // Both filled: replace slot A
-    slots[0] = monsterId;
-    slots[1] = null;
-  }
-  renderFusionPanel();
-}
-
-function clearFusion() {
-  state.fusionSlots = [null, null];
-  renderFusionPanel();
-}
-
-function attemptFusion() {
-  const [idA, idB] = state.fusionSlots;
-  if (!idA || !idB) return;
-
-  // Check we have enough monsters
-  if (idA === idB) {
-    if ((state.monsters[idA] || 0) < 2) {
-      showOfflineNotice('⚠️ 合成に必要な個体が足りません'); return;
+    if (idA !== idB && (checkCount(idA) < 1 || checkCount(idB) < 1)) {
+      EventBus.emit('notice', '⚠️ 個体が足りません'); return;
     }
-  } else {
-    if (!(state.monsters[idA] >= 1 && state.monsters[idB] >= 1)) {
-      showOfflineNotice('⚠️ 合成に必要な個体が足りません'); return;
-    }
-  }
 
-  // Find recipe
-  const recipe = ALL_MONSTER_DEFS.find(def => {
-    if (!def.fusionIngredients) return false;
-    const [r1, r2] = def.fusionIngredients;
-    return (r1 === idA && r2 === idB) || (r1 === idB && r2 === idA);
-  });
-
-  if (!recipe) {
-    showOfflineNotice('❌ この組み合わせに合成レシピがありません');
-    showEventBanner('🧬 未知の組み合わせ…図鑑のヒントを確認しよう！');
-    return;
-  }
-
-  // Consume ingredients
-  state.monsters[idA] = (state.monsters[idA] || 0) - 1;
-  if (idA === idB) {
-    state.monsters[idA] -= 1;
-  } else {
-    state.monsters[idB] = (state.monsters[idB] || 0) - 1;
-  }
-  if (state.monsters[idA] <= 0) delete state.monsters[idA];
-  if (idA !== idB && state.monsters[idB] <= 0) delete state.monsters[idB];
-
-  // Give result
-  state.monsters[recipe.id] = (state.monsters[recipe.id] || 0) + 1;
-  state.totalFusions++;
-  state.fusionSlots = [null, null];
-
-  syncRanchSlimes();
-  renderRanch();
-  renderMonstersGrid();
-  renderZukan();
-  renderFusionPanel();
-  updateStatusTab();
-
-  showHatchOverlay(recipe, true);
-  showEventBanner(`🧬 ${recipe.name} の合成に成功！`);
-}
-
-function renderFusionPanel() {
-  const [idA, idB] = state.fusionSlots;
-  const slotA = document.getElementById('fslot-a');
-  const slotB = document.getElementById('fslot-b');
-  const result = document.getElementById('fslot-result');
-  const btnFuse = document.getElementById('btn-fuse');
-
-  const renderSlot = (slotEl, iconEl, mId) => {
-    if (mId) {
-      const def = ALL_MONSTER_DEFS.find(m => m.id === mId);
-      slotEl.classList.add('filled');
-      slotEl.style.background = `linear-gradient(135deg, ${def.bgColor}aa, ${def.bgColor}44)`;
-      document.getElementById(iconEl).textContent = def.emoji;
-    } else {
-      slotEl.classList.remove('filled');
-      slotEl.style.background = '';
-      document.getElementById(iconEl).textContent = '＋';
-    }
-  };
-  renderSlot(slotA, 'fslot-a-icon', idA);
-  renderSlot(slotB, 'fslot-b-icon', idB);
-
-  // Preview result
-  if (idA && idB) {
-    const recipe = ALL_MONSTER_DEFS.find(def => {
-      if (!def.fusionIngredients) return false;
-      const [r1, r2] = def.fusionIngredients;
+    const recipe = CONFIG.ALL_MONSTERS.find(m => {
+      if (!m.fusion) return false;
+      const [r1, r2] = m.fusion;
       return (r1 === idA && r2 === idB) || (r1 === idB && r2 === idA);
     });
-    result.textContent = recipe ? recipe.emoji : '❓';
-    result.title = recipe ? recipe.name : '未知の合成';
-    btnFuse.disabled = false;
-  } else {
-    result.textContent = '？';
-    btnFuse.disabled = true;
-  }
 
-  // Highlight selected cards
-  document.querySelectorAll('.monster-card').forEach(card => {
-    card.classList.remove('selected-for-fusion');
-    const mId = card.dataset.monsterId;
-    if (mId === idA || mId === idB) card.classList.add('selected-for-fusion');
-  });
-
-  document.getElementById('fusion-hint').textContent =
-    !idA ? 'モンスターカードをタップして個体Aを選択' :
-    !idB ? `${ALL_MONSTER_DEFS.find(m=>m.id===idA)?.name} を選択中。個体Bを選んで！` :
-    '融合ボタンを押して合成！';
-}
-
-/* ============================================================
-   GAME LOGIC
-   ============================================================ */
-function calcGelPerSec() {
-  let gps = 0;
-  for (const [id, count] of Object.entries(state.monsters)) {
-    const def = ALL_MONSTER_DEFS.find(m => m.id === id);
-    if (def) gps += def.gelPerSec * count;
-  }
-  return gps;
-}
-
-function calcTotalMonsters() {
-  return Object.values(state.monsters).reduce((a, b) => a + b, 0);
-}
-
-function handleEggClick(event) {
-  state.energy = Math.min(state.energy + state.energyPerClick, state.maxEnergy);
-  state.totalClicks++;
-
-  spawnFloatText(`+${state.energyPerClick}⚡`, event);
-
-  const eggWrap = document.getElementById('egg-wrap');
-  eggWrap.classList.remove('shaking');
-  void eggWrap.offsetWidth;
-  eggWrap.classList.add('shaking');
-
-  updateCracks();
-  updateEnergyBar();
-  updateHeaderStats();
-  updateStatusTab();
-
-  if (state.energy >= state.maxEnergy) hatchMonster();
-}
-
-function hatchMonster() {
-  const mistTier = getMistTier();
-  const isMistStorm = mistTier.tier === 4;
-
-  state.energy = 0;
-  state.totalHatches++;
-
-  // Consume mist on hatch
-  const mistConsumed = 20 + (state.mistDensity * 0.3);
-  state.mistDensity = Math.max(0, state.mistDensity - mistConsumed);
-  if (isMistStorm) {
-    state.totalMistStorms++;
-    document.getElementById('stat-storms').textContent = state.totalMistStorms;
-  }
-
-  const monster = pickMonster(mistTier);
-  if (!monster) return;
-
-  state.monsters[monster.id] = (state.monsters[monster.id] || 0) + 1;
-
-  syncRanchSlimes();
-  renderRanch();
-  updateCracks();
-  updateEnergyBar();
-  renderMonstersGrid();
-  renderZukan();
-  updateStatusTab();
-  updateMistUI();
-
-  if (isMistStorm) showEventBanner('✨ ミストストーム発動！レア個体が誕生した！');
-
-  showHatchOverlay(monster, false);
-}
-
-function pickMonster(mistTier) {
-  const isMistStorm = mistTier && mistTier.tier === 4;
-
-  // During mist storm: can get mist-exclusive monsters
-  if (isMistStorm && Math.random() < 0.4) {
-    const mistMonsters = MIST_MONSTER_DEFS;
-    return mistMonsters[Math.floor(Math.random() * mistMonsters.length)];
-  }
-
-  // Build weighted pool from BASE monsters only (fusion ones can't hatch)
-  const pool = BASE_MONSTER_DEFS.filter(m => m.hatchWeight > 0);
-  const rareBonus = mistTier ? mistTier.rareBonus : 0;
-
-  // Apply rarity boost
-  const adjusted = pool.map(m => {
-    let w = m.hatchWeight;
-    if (m.rarity === 'rare' || m.rarity === 'legendary') w *= (1 + rareBonus);
-    return { ...m, adjustedWeight: w };
-  });
-
-  const total = adjusted.reduce((a, m) => a + m.adjustedWeight, 0);
-  let r = Math.random() * total;
-  for (const m of adjusted) {
-    r -= m.adjustedWeight;
-    if (r <= 0) return m;
-  }
-  return pool[0];
-}
-
-/* ============================================================
-   GAME LOOP
-   ============================================================ */
-let lastTick = Date.now();
-
-function gameTick() {
-  const now = Date.now();
-  const delta = Math.min((now - lastTick) / 1000, 5); // cap at 5s
-  lastTick = now;
-
-  const gps = calcGelPerSec();
-  const earned = gps * delta;
-  state.gel += earned;
-  state.totalGelEarned += earned;
-  state.playTimeSeconds += delta;
-
-  // Mist rises passively
-  state.mistDensity = Math.min(100, state.mistDensity + state.mistRiseRate * delta);
-
-  updateHeaderStats();
-  updateMistUI();
-
-  // Lightweight stat updates
-  document.getElementById('stat-gel').textContent = formatNum(state.gel);
-  document.getElementById('stat-total-gel').textContent = formatNum(state.totalGelEarned);
-  document.getElementById('stat-gps').textContent = formatNum(gps);
-  document.getElementById('stat-playtime').textContent = formatTime(state.playTimeSeconds);
-  document.getElementById('hdr-gel').textContent = formatNum(Math.floor(state.gel));
-  document.getElementById('hdr-gps').textContent = formatNum(gps) + '/s';
-}
-
-function processOfflineIncome() {
-  const now = Date.now();
-  const offlineSec = Math.max(0, (now - state.lastSaveTimestamp) / 1000);
-  if (offlineSec < 5) return;
-
-  const gps = calcGelPerSec();
-  const earned = gps * offlineSec;
-
-  // Offline mist accumulation
-  const mistGained = Math.min(state.mistRiseRate * offlineSec, 100 - state.mistDensity);
-  state.mistDensity = Math.min(100, state.mistDensity + mistGained);
-
-  if (earned > 0) {
-    state.gel += earned;
-    state.totalGelEarned += earned;
-  }
-
-  const minutes = Math.floor(offlineSec / 60);
-  if (minutes > 0 || earned > 0.5) {
-    showOfflineNotice(`⏰ ${minutes}分放置 → +${formatNum(earned)} ゲル, 霧+${Math.floor(mistGained)}%`);
-  }
-}
-
-/* ============================================================
-   RENDER
-   ============================================================ */
-function renderAll() {
-  updateEnergyBar();
-  updateCracks();
-  syncRanchSlimes();
-  renderRanch();
-  renderMonstersGrid();
-  renderZukan();
-  renderFusionPanel();
-  updateStatusTab();
-  updateHeaderStats();
-  updateMistUI();
-  document.getElementById('stat-storms').textContent = state.totalMistStorms;
-}
-
-function updateHeaderStats() {
-  const gps = calcGelPerSec();
-  document.getElementById('hdr-gel').textContent = formatNum(Math.floor(state.gel));
-  document.getElementById('hdr-gps').textContent = formatNum(gps) + '/s';
-}
-
-function updateEnergyBar() {
-  const pct = (state.energy / state.maxEnergy) * 100;
-  document.getElementById('energy-bar').style.width = pct + '%';
-  document.getElementById('energy-label').textContent =
-    `エネルギー: ${Math.floor(state.energy)} / ${state.maxEnergy}`;
-  document.getElementById('stat-energy').textContent = Math.floor(state.energy);
-  document.getElementById('stat-max-energy').textContent = state.maxEnergy;
-
-  const eggWrap = document.getElementById('egg-wrap');
-  eggWrap.classList.toggle('glowing', pct >= 80);
-}
-
-function updateCracks() {
-  const pct = state.energy / state.maxEnergy;
-  document.querySelectorAll('.crack').forEach((c, i) => {
-    c.classList.toggle('visible', pct >= (i + 1) * 0.25);
-  });
-}
-
-function renderMonstersGrid() {
-  const grid = document.getElementById('monsters-grid');
-  const entries = Object.entries(state.monsters).filter(([, c]) => c > 0);
-
-  if (entries.length === 0) {
-    grid.innerHTML = '<div class="empty-monsters">まだモンスターがいません</div>';
-    return;
-  }
-
-  grid.innerHTML = '';
-  for (const [id, count] of entries) {
-    const def = ALL_MONSTER_DEFS.find(m => m.id === id);
-    if (!def) continue;
-
-    const card = document.createElement('div');
-    card.className = 'monster-card';
-    card.dataset.monsterId = id;
-
-    // Check fusion selection state
-    const [idA, idB] = state.fusionSlots;
-    if (id === idA || id === idB) card.classList.add('selected-for-fusion');
-
-    card.innerHTML = `
-      <div class="monster-count">×${count}</div>
-      <div class="monster-img-wrap" style="background:${def.bgColor}">
-        ${buildMonsterImgTag(def)}
-      </div>
-      <div class="monster-name">${def.name}</div>
-      <div class="monster-income">+${def.gelPerSec}/s</div>
-    `;
-    card.addEventListener('click', () => selectForFusion(id));
-    grid.appendChild(card);
-  }
-}
-
-function renderZukan() {
-  const list = document.getElementById('zukan-list');
-  list.innerHTML = '';
-
-  const discovered = ALL_MONSTER_DEFS.filter(m => (state.monsters[m.id] || 0) > 0).length;
-  document.getElementById('zukan-counter').textContent =
-    `${discovered} / ${ALL_MONSTER_DEFS.length}`;
-
-  for (const def of ALL_MONSTER_DEFS) {
-    const count = state.monsters[def.id] || 0;
-    const isDiscovered = count > 0;
-
-    const entry = document.createElement('div');
-    entry.className = 'zukan-entry' + (isDiscovered ? '' : ' undiscovered');
-
-    const sourceBadge = def.source === 'fusion'
-      ? `<span class="zukan-source-badge" style="background:#f0e0ff;color:#9040c0;">🧬合成</span>`
-      : def.source === 'mist'
-      ? `<span class="zukan-source-badge" style="background:#e8e0ff;color:#5040a0;">🌫️霧</span>`
-      : '';
-
-    // Fusion hint for undiscovered fusion monsters
-    let hintText = isDiscovered ? def.description : 'まだ発見されていません。';
-    if (!isDiscovered && def.fusionIngredients) {
-      const [a, b] = def.fusionIngredients;
-      const da = ALL_MONSTER_DEFS.find(m => m.id === a);
-      const db = ALL_MONSTER_DEFS.find(m => m.id === b);
-      hintText = `🧬 合成で誕生します。ヒント: ${da?.emoji||'？'} + ${db?.emoji||'？'}`;
-    } else if (!isDiscovered && def.source === 'mist') {
-      hintText = '🌫️ 霧が100%に達した時に孵化で出現します。';
+    if (!recipe) {
+      EventBus.emit('notice', '❌ レシピがありません');
+      EventBus.emit('event', '🧬 未知の組み合わせ…合成帳のヒントを確認しよう！');
+      return;
     }
 
-    entry.innerHTML = `
-      <div class="zukan-img ${isDiscovered ? '' : 'locked'}" style="background:${def.bgColor}">
-        ${isDiscovered ? buildMonsterImgTag(def) : '❓'}
-      </div>
-      <div class="zukan-info">
-        <div class="zukan-name">
-          ${isDiscovered ? def.name : '???'}
-          <span style="font-size:0.65rem;color:${RARITY_COLOR[def.rarity]};margin-left:4px;">${RARITY_LABEL[def.rarity]}</span>
-          ${sourceBadge}
-        </div>
-        <div class="zukan-desc">${hintText}</div>
-        ${isDiscovered ? `<div class="zukan-desc" style="margin-top:3px;">💧 +${def.gelPerSec}/秒</div>` : ''}
-      </div>
-      ${isDiscovered ? `<div class="zukan-count-badge">×${count}</div>` : ''}
-    `;
-    list.appendChild(entry);
+    // Consume
+    s.monsters[idA]--;
+    if (idA === idB) s.monsters[idA]--;
+    else s.monsters[idB]--;
+    if (s.monsters[idA] <= 0) delete s.monsters[idA];
+    if (idA !== idB && (s.monsters[idB] || 0) <= 0) delete s.monsters[idB];
+
+    const isNew = !s.discovered.includes(recipe.id);
+    s.monsters[recipe.id] = (s.monsters[recipe.id] || 0) + 1;
+    if (isNew) s.discovered.push(recipe.id);
+    s.totalFusions++;
+    s.fusionSlots = [null, null];
+
+    EventBus.emit('fused', { monster: recipe, isNew });
   }
+
+  /* Expedition */
+  function sendOnExpedition(slimeUid) {
+    const s = StateManager.get();
+    const rs = s.ranchSlimes.find(r => r.uid === slimeUid);
+    if (!rs || rs.onExpedition) return;
+
+    const def = CONFIG.ALL_MONSTERS.find(m => m.id === rs.monsterId);
+    const dur = diff().expDuration;
+    const reward = pickExpReward(def);
+
+    const now = Date.now();
+    s.expeditions.push({
+      uid: `exp_${now}`,
+      slimeUid,
+      monsterId: rs.monsterId,
+      returnAt: now + dur * 1000,
+      rewardType: reward.id,
+      rewardAmt: reward.amt,
+      label: reward.label,
+    });
+    rs.onExpedition = true;
+    EventBus.emit('notice', `🗺️ ${def.name} を遠征に送りました！`);
+    EventBus.emit('ranchChanged');
+  }
+
+  function pickExpReward(def) {
+    const base = CONFIG.EXP_REWARDS;
+    // Explorer role boosts reward
+    const bonus = def?.role === 'explorer' ? 1.5 : 1;
+    const total = base.reduce((a, r) => a + r.weight, 0);
+    let r = Math.random() * total;
+    for (const rw of base) {
+      r -= rw.weight;
+      if (r <= 0) {
+        const amt = Math.round((rw.min + Math.random() * (rw.max - rw.min)) * bonus);
+        return { id: rw.id, amt, label: `${rw.label} ×${amt}` };
+      }
+    }
+    return { id: 'gel', amt: 30, label: 'ゲル ×30' };
+  }
+
+  function processExpeditionReturns() {
+    const s = StateManager.get();
+    const now = Date.now();
+    const returned = [];
+    s.expeditions = s.expeditions.filter(exp => {
+      if (now >= exp.returnAt) {
+        applyExpReward(exp);
+        const rs = s.ranchSlimes.find(r => r.uid === exp.slimeUid);
+        if (rs) rs.onExpedition = false;
+        s.totalExpeditions++;
+        returned.push(exp);
+        return false;
+      }
+      return true;
+    });
+    if (returned.length) {
+      EventBus.emit('expeditionsReturned', returned);
+      EventBus.emit('ranchChanged');
+    }
+  }
+
+  function applyExpReward(exp) {
+    const s = StateManager.get();
+    if (exp.rewardType === 'gel') s.resources.gel += exp.rewardAmt;
+    else if (exp.rewardType === 'crystal') s.resources.mistCrystal += exp.rewardAmt;
+    else if (exp.rewardType === 'shard') s.resources.elementalShard += exp.rewardAmt;
+  }
+
+  /* Game tick */
+  let _lastTick = Date.now();
+  function tick() {
+    const now = Date.now();
+    const delta = Math.min((now - _lastTick) / 1000, 5);
+    _lastTick = now;
+
+    const s = StateManager.get();
+    const gps = calcGPS();
+    const res = s.resources;
+    res.gel += gps * delta;
+    res.totalGel += gps * delta;
+    s.playTimeSec += delta;
+
+    // Mist rise
+    const mistRole = CONFIG.ALL_MONSTERS
+      .filter(m => m.role === 'mist')
+      .reduce((a, m) => a + (s.monsters[m.id] || 0), 0);
+    const mistBonus = 1 + mistRole * 0.15;
+    s.env.mistDensity = Math.min(100, s.env.mistDensity + diff().mistRiseRate * delta * mistBonus);
+
+    // Temperature drift (environmental variance)
+    s.env.temperature = 20 + Math.sin(s.playTimeSec / 180) * 35 + Math.sin(s.playTimeSec / 60) * 10;
+    s.env.humidity    = 50 + Math.cos(s.playTimeSec / 240) * 30 + Math.cos(s.playTimeSec / 90) * 15;
+
+    // Mist crystals passive (dense mist)
+    if (s.env.mistDensity >= 50) {
+      res.mistCrystal += 0.01 * delta * mistBonus;
+    }
+
+    processExpeditionReturns();
+    EventBus.emit('tick', { gps, delta });
+  }
+
+  function processOffline() {
+    const s = StateManager.get();
+    const now = Date.now();
+    const offSec = Math.max(0, (now - s.lastSaveTs) / 1000);
+    if (offSec < 5) return;
+
+    const gps = calcGPS();
+    const earned = gps * offSec;
+    const mistGained = Math.min(diff().mistRiseRate * offSec, 100 - s.env.mistDensity);
+
+    s.resources.gel += earned;
+    s.resources.totalGel += earned;
+    s.env.mistDensity = Math.min(100, s.env.mistDensity + mistGained);
+
+    // Process completed expeditions
+    processExpeditionReturns();
+
+    const mins = Math.floor(offSec / 60);
+    if (mins > 0 || earned > 0.5) {
+      EventBus.emit('notice',
+        `⏰ ${mins}分放置 → ゲル+${fmt(earned)} / 霧+${Math.floor(mistGained)}%`);
+    }
+  }
+
+  return {
+    hatchCost, calcGPS, totalMonsters, currentAttr,
+    getMistTier, handleEggClick, attemptFusion,
+    sendOnExpedition, processOffline, tick,
+  };
+})();
+
+/* ================================================================
+   MODULE: RanchSystem  ― 牧場・配置ロジック
+================================================================ */
+const RanchSystem = (() => {
+  const MAX = 20;
+
+  function sync() {
+    const s = StateManager.get();
+    // Build expected list
+    const all = [];
+    for (const [id, cnt] of Object.entries(s.monsters)) {
+      for (let i = 0; i < cnt; i++) all.push(id);
+    }
+    const expected = all.slice(0, MAX);
+
+    // Remove orphan entries
+    s.ranchSlimes = s.ranchSlimes.filter(rs => {
+      const def = CONFIG.ALL_MONSTERS.find(m => m.id === rs.monsterId);
+      return def && (s.monsters[rs.monsterId] || 0) > 0;
+    });
+
+    // Count placed per species
+    const placed = {};
+    s.ranchSlimes.forEach(rs => { placed[rs.monsterId] = (placed[rs.monsterId] || 0) + 1; });
+
+    // Add missing
+    for (const id of expected) {
+      const owned = s.monsters[id] || 0;
+      if ((placed[id] || 0) < owned && s.ranchSlimes.length < MAX) {
+        const pos = findPos(s.ranchSlimes);
+        s.ranchSlimes.push({
+          uid: `rs_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          monsterId: id,
+          x: pos.x, y: pos.y,
+          size: 34 + Math.floor(Math.random() * 14),
+          animDelay: (Math.random() * 2).toFixed(2),
+          onExpedition: false,
+        });
+        placed[id] = (placed[id] || 0) + 1;
+      }
+    }
+  }
+
+  function findPos(existing, tries = 25) {
+    for (let i = 0; i < tries; i++) {
+      const x = 5 + Math.random() * 78;
+      const y = 12 + Math.random() * 62;
+      let ok = true;
+      for (const rs of existing) {
+        const dx = rs.x - x, dy = rs.y - y;
+        if (Math.sqrt(dx * dx + dy * dy) < 13) { ok = false; break; }
+      }
+      if (ok) return { x, y };
+    }
+    return { x: 5 + Math.random() * 78, y: 12 + Math.random() * 62 };
+  }
+
+  return { sync };
+})();
+
+/* ================================================================
+   MODULE: UIRenderer  ― DOM 操作・描画
+================================================================ */
+const UIRenderer = (() => {
+
+  /* ── Helpers ── */
+  function fmt(n) {
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return Math.floor(n).toString();
+  }
+  function fmtTime(s) {
+    s = Math.floor(s);
+    if (s < 60) return s + '秒';
+    if (s < 3600) return Math.floor(s / 60) + '分' + (s % 60) + '秒';
+    return Math.floor(s / 3600) + '時間' + Math.floor((s % 3600) / 60) + '分';
+  }
+  function fmtCountdown(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    if (s < 60) return s + '秒';
+    return Math.floor(s / 60) + '分' + (s % 60) + '秒';
+  }
+  function monsterImg(def, emojiFontSize) {
+    const sz = emojiFontSize || '1.5rem';
+    return `<img src="${def.img}" alt="${def.name}"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+      style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+    <span style="display:none;font-size:${sz};width:100%;height:100%;align-items:center;justify-content:center;">${def.emoji}</span>`;
+  }
+
+  /* ── Header / Resources ── */
+  function updateResources() {
+    const s = StateManager.get();
+    const gps = GameEngine.calcGPS();
+    const r = s.resources;
+    document.getElementById('hdr-gel').textContent = fmt(Math.floor(r.gel));
+    document.getElementById('hdr-gps').textContent = fmt(gps) + '/s';
+    document.getElementById('res-gel').textContent = fmt(Math.floor(r.gel));
+    document.getElementById('res-crystal').textContent = fmt(Math.floor(r.mistCrystal));
+    document.getElementById('res-shard').textContent = fmt(Math.floor(r.elementalShard));
+    document.getElementById('res-gps-chip').textContent = fmt(gps);
+  }
+
+  /* ── Mist ── */
+  function updateMist() {
+    const s = StateManager.get();
+    const d = s.env.mistDensity;
+    const tier = GameEngine.getMistTier(d);
+    const pct = Math.min(100, d);
+    document.getElementById('mist-fill').style.width = pct + '%';
+    document.getElementById('mist-pct').textContent = Math.floor(pct) + '%';
+    document.getElementById('mist-tier').textContent = tier.label;
+    document.getElementById('md-pct').textContent = Math.floor(pct) + '%';
+    document.getElementById('md-tier').textContent = tier.label;
+    document.getElementById('md-storm').textContent = s.totalMistStorms;
+    // Page overlay
+    const op = (pct / 100) * 0.16;
+    document.getElementById('mist-overlay').style.background =
+      `radial-gradient(ellipse at 50% 0%,rgba(140,80,220,${op}) 0%,transparent 70%)`;
+    document.getElementById('ranch-mist').style.background =
+      `linear-gradient(180deg,rgba(180,120,255,${(pct/100)*.3}) 0%,rgba(120,60,200,${(pct/100)*.15}) 100%)`;
+  }
+
+  /* ── Environment / Egg type ── */
+  function updateEnv() {
+    const s = StateManager.get();
+    document.getElementById('env-temp').textContent = Math.round(s.env.temperature);
+    document.getElementById('env-humid').textContent = Math.round(s.env.humidity);
+    const attr = GameEngine.currentAttr();
+    const attrChip = document.getElementById('env-attr-chip');
+    const badge = document.getElementById('egg-type-badge');
+    if (attr) {
+      attrChip.style.display = 'flex';
+      document.getElementById('env-attr-label').textContent = attr.label;
+      badge.textContent = `${attr.label}卵`;
+      badge.style.color = '#e06020';
+      badge.style.borderColor = 'rgba(240,120,40,.4)';
+      badge.style.background = 'rgba(240,180,100,.15)';
+      document.getElementById('egg-body').setAttribute('fill', `url(#${attr.grad})`);
+    } else {
+      attrChip.style.display = 'none';
+      badge.textContent = '🥚 通常卵';
+      badge.style.color = '';
+      badge.style.borderColor = '';
+      badge.style.background = '';
+      document.getElementById('egg-body').setAttribute('fill', 'url(#eggGrad)');
+    }
+  }
+
+  /* ── Egg / Click progress ── */
+  function updateEggProgress() {
+    const s = StateManager.get();
+    const cost = GameEngine.hatchCost();
+    const pct = (s.hatchClicks / cost) * 100;
+    document.getElementById('click-bar').style.width = pct + '%';
+    document.getElementById('click-cost').textContent = `クリック: ${s.hatchClicks} / ${cost}`;
+    document.getElementById('st-nextcost').textContent = cost;
+    document.getElementById('egg-wrap').classList.toggle('glowing', pct >= 80);
+    const cracks = document.querySelectorAll('.crack');
+    cracks.forEach((c, i) => c.classList.toggle('visible', pct >= (i + 1) * 25));
+  }
+
+  /* ── Ranch ── */
+  function renderRanch() {
+    const s = StateManager.get();
+    RanchSystem.sync();
+    const wrap = document.getElementById('ranch-wrap');
+    wrap.querySelectorAll('.ranch-slime').forEach(el => el.remove());
+    const hint = document.getElementById('ranch-empty-hint');
+    hint.style.display = s.ranchSlimes.length === 0 ? 'block' : 'none';
+    document.getElementById('ranch-count-lbl').textContent =
+      s.ranchSlimes.length > 0 ? `(${s.ranchSlimes.length}体)` : '';
+
+    for (const rs of s.ranchSlimes) {
+      const def = CONFIG.ALL_MONSTERS.find(m => m.id === rs.monsterId);
+      if (!def) continue;
+      const el = document.createElement('div');
+      el.className = 'ranch-slime' + (rs.onExpedition ? ' on-expedition' : '');
+      el.style.cssText = `left:${rs.x}%;top:${rs.y}%;animation-delay:-${rs.animDelay}s`;
+      el.dataset.uid = rs.uid;
+      const role = CONFIG.ROLES[def.role];
+      el.innerHTML = `
+        <div class="rsb" style="width:${rs.size}px;height:${rs.size}px;background:${def.bgColor}">
+          ${monsterImg(def, `${rs.size * 0.58}px`)}
+          ${rs.onExpedition ? '<span class="exp-badge">遠征中</span>' : ''}
+        </div>
+        <div class="rsn">${def.name.replace('スライム','')}</div>`;
+      el.addEventListener('click', () => showSlimePopup(rs, def));
+      wrap.appendChild(el);
+    }
+    renderExpeditionList();
+  }
+
+  /* Slime popup (tap on ranch) */
+  function showSlimePopup(rs, def) {
+    if (rs.onExpedition) {
+      EventBus.emit('notice', `${def.emoji} ${def.name} は遠征中です！`);
+      return;
+    }
+    const role = CONFIG.ROLES[def.role];
+    const ok = confirm(`【${def.name}】\n役割: ${role.emoji}${role.label}（${role.desc}）\n\n遠征に送りますか？`);
+    if (ok) GameEngine.sendOnExpedition(rs.uid);
+  }
+
+  /* ── Expedition list ── */
+  function renderExpeditionList() {
+    const s = StateManager.get();
+    const el = document.getElementById('expedition-list');
+    if (s.expeditions.length === 0) { el.innerHTML = ''; return; }
+    el.innerHTML = '';
+    const now = Date.now();
+    for (const exp of s.expeditions) {
+      const def = CONFIG.ALL_MONSTERS.find(m => m.id === exp.monsterId);
+      const ms = exp.returnAt - now;
+      const row = document.createElement('div');
+      row.className = 'exp-slot';
+      row.innerHTML = `
+        <span style="font-size:1.1rem">${def?.emoji || '?'}</span>
+        <div style="flex:1">
+          <div class="exp-name">${def?.name || exp.monsterId}</div>
+          <div class="exp-reward">報酬予定: ${exp.label}</div>
+        </div>
+        <div class="exp-timer" id="etimer-${exp.uid}">${fmtCountdown(ms)}</div>`;
+      el.appendChild(row);
+    }
+  }
+
+  function tickExpeditionTimers() {
+    const s = StateManager.get();
+    const now = Date.now();
+    for (const exp of s.expeditions) {
+      const el = document.getElementById(`etimer-${exp.uid}`);
+      if (el) el.textContent = fmtCountdown(exp.returnAt - now);
+    }
+  }
+
+  /* ── Monsters Grid ── */
+  function renderMonstersGrid() {
+    const s = StateManager.get();
+    const grid = document.getElementById('monsters-grid');
+    const entries = Object.entries(s.monsters).filter(([, c]) => c > 0);
+    if (entries.length === 0) { grid.innerHTML = '<div class="empty-msg">まだいません</div>'; return; }
+    grid.innerHTML = '';
+    const [idA, idB] = s.fusionSlots;
+    for (const [id, cnt] of entries) {
+      const def = CONFIG.ALL_MONSTERS.find(m => m.id === id);
+      if (!def) continue;
+      const role = CONFIG.ROLES[def.role];
+      const card = document.createElement('div');
+      card.className = 'mcard' + (id === idA || id === idB ? ' sel' : '');
+      card.dataset.monsterId = id;
+      card.innerHTML = `
+        <div class="mcard-count">×${cnt}</div>
+        <div class="mcard-img" style="background:${def.bgColor}">${monsterImg(def)}</div>
+        <div class="mcard-name">${def.name}</div>
+        <div class="mcard-role" style="background:${role.color}20;color:${role.color}">${role.emoji}${role.label}</div>
+        <div class="mcard-income">+${def.gps}/s</div>`;
+      card.addEventListener('click', () => {
+        selectFusion(id);
+        renderMonstersGrid();
+        renderFusionPanel();
+      });
+      grid.appendChild(card);
+    }
+  }
+
+  function selectFusion(id) {
+    const s = StateManager.get();
+    const slots = s.fusionSlots;
+    if (slots[0] === null) { slots[0] = id; }
+    else if (slots[1] === null) {
+      if (id === slots[0]) {
+        if ((s.monsters[id] || 0) >= 2) slots[1] = id;
+        else { EventBus.emit('notice', '⚠️ 同種合成には2体必要'); return; }
+      } else { slots[1] = id; }
+    } else { slots[0] = id; slots[1] = null; }
+  }
+
+  /* ── Fusion Panel ── */
+  function renderFusionPanel() {
+    const s = StateManager.get();
+    const [idA, idB] = s.fusionSlots;
+    const renderSlot = (slotId, iconId, mId) => {
+      const slot = document.getElementById(slotId);
+      const icon = document.getElementById(iconId);
+      if (mId) {
+        const def = CONFIG.ALL_MONSTERS.find(m => m.id === mId);
+        slot.classList.add('filled');
+        slot.style.background = `linear-gradient(135deg,${def.bg}88,${def.bg}33)`;
+        icon.textContent = def.emoji;
+      } else {
+        slot.classList.remove('filled');
+        slot.style.background = '';
+        icon.textContent = '＋';
+      }
+    };
+    renderSlot('fsa', 'fsa-icon', idA);
+    renderSlot('fsb', 'fsb-icon', idB);
+
+    const fsr = document.getElementById('fsr');
+    const btnFuse = document.getElementById('btn-fuse');
+    if (idA && idB) {
+      const recipe = CONFIG.ALL_MONSTERS.find(m => {
+        if (!m.fusion) return false;
+        const [r1, r2] = m.fusion;
+        return (r1 === idA && r2 === idB) || (r1 === idB && r2 === idA);
+      });
+      fsr.textContent = recipe ? recipe.emoji : '❓';
+      btnFuse.disabled = false;
+    } else {
+      fsr.textContent = '？';
+      btnFuse.disabled = true;
+    }
+
+    const hintMsg = !idA ? 'モンスターカードをタップして個体Aを選択' :
+                    !idB ? `${CONFIG.ALL_MONSTERS.find(m=>m.id===idA)?.name} 選択中。個体Bを選んで！` :
+                    '融合ボタンを押して合成！';
+    document.getElementById('fusion-hint').textContent = hintMsg;
+  }
+
+  /* ── Zukan ── */
+  function renderZukan() {
+    const s = StateManager.get();
+    const list = document.getElementById('zukan-list');
+    list.innerHTML = '';
+    const disc = CONFIG.ALL_MONSTERS.filter(m => s.discovered.includes(m.id)).length;
+    document.getElementById('zukan-cnt').textContent = `${disc} / ${CONFIG.ALL_MONSTERS.length}`;
+
+    for (const def of CONFIG.ALL_MONSTERS) {
+      const cnt = s.monsters[def.id] || 0;
+      const known = s.discovered.includes(def.id);
+      const entry = document.createElement('div');
+      entry.className = 'zen' + (known ? '' : ' unk');
+      const srcBadge = def.source === 'fusion' ?
+        `<span class="src-badge" style="background:#f0e0ff;color:#9040c0">🧬合成</span>` :
+        def.source.startsWith('attr') ?
+        `<span class="src-badge" style="background:#fff0e0;color:#b04000">✨属性</span>` :
+        def.source === 'mist' ?
+        `<span class="src-badge" style="background:#e8e0ff;color:#5040a0">🌫️霧</span>` : '';
+      let hint = known ? def.desc : '未発見です。';
+      if (!known && def.fusion) {
+        const [a, b] = def.fusion;
+        const da = CONFIG.ALL_MONSTERS.find(m => m.id === a);
+        const db = CONFIG.ALL_MONSTERS.find(m => m.id === b);
+        hint = `🧬 ${da?.emoji||'?'} ＋ ${db?.emoji||'?'} の合成で誕生`;
+      } else if (!known && def.source.startsWith('attr')) {
+        hint = `✨ 特定の環境属性の卵から誕生します`;
+      } else if (!known && def.source === 'mist') {
+        hint = `🌫️ ミストストーム発動時に誕生します`;
+      }
+      const role = known ? CONFIG.ROLES[def.role] : null;
+      entry.innerHTML = `
+        <div class="zen-img${known ? '' : ' locked'}" style="background:${def.bg}">
+          ${known ? monsterImg(def, '1.7rem') : '❓'}
+        </div>
+        <div class="zen-info">
+          <div class="zen-name">
+            ${known ? def.name : '???'}
+            <span style="font-size:.62rem;color:${CONFIG.RARITY_COLOR[def.rarity]};margin-left:3px">${CONFIG.RARITY_LABEL[def.rarity]}</span>
+            ${srcBadge}
+          </div>
+          <div class="zen-desc">${hint}</div>
+          ${known ? `<div class="zen-desc" style="margin-top:3px">${role?.emoji}${role?.label} ／ +${def.gps}/秒</div>` : ''}
+        </div>
+        ${known ? `<div class="zen-badge">×${cnt}</div>` : ''}`;
+      list.appendChild(entry);
+    }
+  }
+
+  /* ── Recipe Book ── */
+  function renderRecipeBook() {
+    const list = document.getElementById('recipe-list');
+    list.innerHTML = '';
+    const fusions = CONFIG.ALL_MONSTERS.filter(m => m.fusion);
+    for (const recipe of fusions) {
+      const [a, b] = recipe.fusion;
+      const da = CONFIG.ALL_MONSTERS.find(m => m.id === a);
+      const db = CONFIG.ALL_MONSTERS.find(m => m.id === b);
+      const s = StateManager.get();
+      const known = s.discovered.includes(recipe.id);
+      const el = document.createElement('div');
+      el.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--rs);background:${known?'linear-gradient(135deg,#f8f4ff,#fff6fb)':'#f5f5f5'};border:1.5px solid ${known?'#ede5fa':'#e0e0e0'}`;
+      el.innerHTML = `
+        <span style="font-size:1.4rem">${da?.emoji||'?'}</span>
+        <span style="color:var(--tx3);font-size:1rem">＋</span>
+        <span style="font-size:1.4rem">${db?.emoji||'?'}</span>
+        <span style="color:var(--tx3);font-size:1rem">→</span>
+        <span style="font-size:1.4rem">${known?recipe.emoji:'❓'}</span>
+        <div style="flex:1">
+          <div style="font-size:.78rem;font-weight:700;color:var(--tx)">${known?recipe.name:'???'}</div>
+          <div style="font-size:.65rem;color:var(--tx3)">${da?.name||'?'} ＋ ${db?.name||'?'}</div>
+        </div>
+        <span style="font-size:.65rem;padding:2px 7px;border-radius:8px;background:${CONFIG.RARITY_COLOR[recipe.rarity]}22;color:${CONFIG.RARITY_COLOR[recipe.rarity]};font-weight:700">${CONFIG.RARITY_LABEL[recipe.rarity]}</span>`;
+      list.appendChild(el);
+    }
+  }
+
+  /* ── Stats ── */
+  function updateStats() {
+    const s = StateManager.get();
+    const r = s.resources;
+    const gps = GameEngine.calcGPS();
+    document.getElementById('st-gel').textContent  = fmt(r.gel);
+    document.getElementById('st-tgel').textContent = fmt(r.totalGel);
+    document.getElementById('st-gps').textContent  = fmt(gps);
+    document.getElementById('st-crystal').textContent = fmt(r.mistCrystal);
+    document.getElementById('st-shard').textContent   = fmt(r.elementalShard);
+    document.getElementById('st-mon').textContent  = GameEngine.totalMonsters();
+    document.getElementById('st-sp').textContent   = Object.keys(s.monsters).length;
+    document.getElementById('st-hatch').textContent = s.totalHatches;
+    document.getElementById('st-fuse').textContent  = s.totalFusions;
+    document.getElementById('st-time').textContent  = fmtTime(s.playTimeSec);
+    document.getElementById('st-storm').textContent = s.totalMistStorms;
+    document.getElementById('st-exp').textContent   = s.totalExpeditions;
+  }
+
+  /* ── Mode UI ── */
+  function updateModeUI() {
+    const s = StateManager.get();
+    const d = CONFIG.DIFFICULTY[s.difficulty];
+    const desc = s.difficulty === 'easy'
+      ? '孵化コストが低く、霧の上昇もゆっくり。じっくり楽しめるモード。'
+      : '孵化コストが高く、霧の上昇も速い。やり込み向けモード。';
+    document.getElementById('mode-desc').textContent = `現在: ${d.label} — ${desc}`;
+    document.getElementById('btn-mode-easy').style.borderColor =
+      s.difficulty === 'easy' ? 'var(--a1)' : '';
+    document.getElementById('btn-mode-hard').style.borderColor =
+      s.difficulty === 'hard' ? 'var(--a4)' : '';
+  }
+
+  /* ── Toast ── */
+  function toast(msg, type = 'normal') {
+    const wrap = document.getElementById('toast-wrap');
+    const el = document.createElement('div');
+    el.className = 'toast' + (type === 'rare' ? ' rare' : type === 'legendary' ? ' legendary' : '');
+    el.textContent = msg;
+    wrap.appendChild(el);
+    const dur = type === 'legendary' ? 4000 : 2500;
+    setTimeout(() => {
+      el.style.animationName = 'toastOut';
+      el.addEventListener('animationend', () => el.remove());
+    }, dur);
+  }
+
+  /* ── Hatch overlay (first-time / legendary) ── */
+  function showHatchOverlay(monster, isFusion) {
+    const img = document.getElementById('hatch-mon-img');
+    img.style.background = monster.bg;
+    img.innerHTML = monsterImg(monster, '3.5rem');
+    document.getElementById('hatch-title').textContent =
+      isFusion ? `🧬 ${monster.name} 合成成功！` : `✨ ${monster.name} 誕生！`;
+    document.getElementById('hatch-rarity').textContent = CONFIG.RARITY_LABEL[monster.rarity];
+    document.getElementById('hatch-rarity').style.color = CONFIG.RARITY_COLOR[monster.rarity];
+    document.getElementById('hatch-desc').textContent = monster.desc;
+    document.getElementById('hatch-overlay').classList.add('visible');
+  }
+
+  /* ── Float text ── */
+  function floatText(text, event) {
+    const el = document.createElement('div');
+    el.className = 'float-text';
+    el.textContent = text;
+    let x = 200, y = 300;
+    if (event?.touches?.[0]) { x = event.touches[0].clientX; y = event.touches[0].clientY; }
+    else if (event?.clientX) { x = event.clientX; y = event.clientY; }
+    el.style.left = (x - 16) + 'px';
+    el.style.top  = (y - 8) + 'px';
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+
+  /* ── Egg shake ── */
+  function shakeEgg() {
+    const egg = document.getElementById('egg-wrap');
+    egg.classList.remove('shaking');
+    void egg.offsetWidth;
+    egg.classList.add('shaking');
+  }
+
+  /* ── Full render ── */
+  function renderAll() {
+    updateResources();
+    updateMist();
+    updateEnv();
+    updateEggProgress();
+    RanchSystem.sync();
+    renderRanch();
+    renderMonstersGrid();
+    renderFusionPanel();
+    renderZukan();
+    renderRecipeBook();
+    updateStats();
+    updateModeUI();
+  }
+
+  /* ── Tick update (lightweight) ── */
+  function tickUpdate(gps) {
+    updateResources();
+    updateMist();
+    updateEnv();
+    updateEggProgress();
+    tickExpeditionTimers();
+    updateStats();
+  }
+
+  return {
+    renderAll, tickUpdate,
+    renderRanch, renderMonstersGrid, renderFusionPanel,
+    renderZukan, renderRecipeBook, updateStats,
+    showHatchOverlay, toast, floatText, shakeEgg,
+    updateModeUI,
+  };
+})();
+
+/* ================================================================
+   WIRING: EventBus subscriptions
+================================================================ */
+// Utility
+function fmt(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return Math.floor(n).toString();
 }
 
-function updateStatusTab() {
-  document.getElementById('stat-gel').textContent = formatNum(state.gel);
-  document.getElementById('stat-total-gel').textContent = formatNum(state.totalGelEarned);
-  document.getElementById('stat-gps').textContent = formatNum(calcGelPerSec());
-  document.getElementById('stat-monsters').textContent = calcTotalMonsters();
-  document.getElementById('stat-species').textContent = Object.keys(state.monsters).length;
-  document.getElementById('stat-hatches').textContent = state.totalHatches;
-  document.getElementById('stat-clicks').textContent = state.totalClicks;
-  document.getElementById('stat-energy').textContent = Math.floor(state.energy);
-  document.getElementById('stat-max-energy').textContent = state.maxEnergy;
-  document.getElementById('stat-fusions').textContent = state.totalFusions;
-  document.getElementById('stat-playtime').textContent = formatTime(state.playTimeSeconds);
-}
-
-/* ============================================================
-   HATCH OVERLAY
-   ============================================================ */
-function showHatchOverlay(monster, isFusion) {
-  const overlay = document.getElementById('hatch-overlay');
-  const imgEl = document.getElementById('hatch-monster-img');
-  const titleEl = document.getElementById('hatch-title');
-  const rarityEl = document.getElementById('hatch-rarity');
-  const descEl = document.getElementById('hatch-desc');
-
-  imgEl.style.background = monster.bgColor;
-  imgEl.innerHTML = buildMonsterImgTag(monster, 80);
-  titleEl.textContent = isFusion ? `🧬 ${monster.name} 合成成功！` : `✨ ${monster.name} 誕生！`;
-  rarityEl.textContent = RARITY_LABEL[monster.rarity];
-  rarityEl.style.color = RARITY_COLOR[monster.rarity];
-  descEl.textContent = monster.description;
-  overlay.classList.add('visible');
-}
-
-document.getElementById('hatch-ok').addEventListener('click', () => {
-  document.getElementById('hatch-overlay').classList.remove('visible');
-});
-
-/* ============================================================
-   FLOAT TEXT
-   ============================================================ */
-function spawnFloatText(text, event) {
-  const el = document.createElement('div');
-  el.className = 'float-text';
-  el.textContent = text;
-  let x = 200, y = 300;
-  if (event?.touches?.[0]) { x = event.touches[0].clientX; y = event.touches[0].clientY; }
-  else if (event?.clientX) { x = event.clientX; y = event.clientY; }
-  el.style.left = (x - 20) + 'px';
-  el.style.top = (y - 10) + 'px';
-  document.body.appendChild(el);
-  el.addEventListener('animationend', () => el.remove());
-}
-
-/* ============================================================
-   NOTICES
-   ============================================================ */
-let offlineTimer = null;
-function showOfflineNotice(msg) {
+let offTimer = null;
+function showNotice(msg) {
   const el = document.getElementById('offline-notice');
   el.textContent = msg;
   el.classList.add('visible');
-  clearTimeout(offlineTimer);
-  offlineTimer = setTimeout(() => el.classList.remove('visible'), 2800);
+  clearTimeout(offTimer);
+  offTimer = setTimeout(() => el.classList.remove('visible'), 2800);
 }
 
-let eventTimer = null;
-function showEventBanner(msg) {
+let evtTimer = null;
+function showEvent(msg) {
   const el = document.getElementById('event-banner');
-  document.getElementById('event-banner-text').textContent = msg;
+  el.textContent = msg;
   el.classList.add('visible');
-  clearTimeout(eventTimer);
-  eventTimer = setTimeout(() => el.classList.remove('visible'), 3500);
+  clearTimeout(evtTimer);
+  evtTimer = setTimeout(() => el.classList.remove('visible'), 3500);
 }
 
-/* ============================================================
-   TABS
-   ============================================================ */
+EventBus.on('notice', showNotice);
+EventBus.on('event', showEvent);
+
+EventBus.on('tick', ({ gps }) => {
+  UIRenderer.tickUpdate(gps);
+});
+
+EventBus.on('eggClicked', ({ x, y, energy, cost }) => {
+  UIRenderer.floatText(`+1 ⚡`, { clientX: x, clientY: y });
+  UIRenderer.shakeEgg();
+  UIRenderer.updateStats();
+});
+
+EventBus.on('hatched', ({ monster, isNew }) => {
+  const tier = CONFIG.RARITY_LABEL[monster.rarity];
+  if (isNew || monster.rarity === 'legendary') {
+    UIRenderer.showHatchOverlay(monster, false);
+  } else {
+    const badge = monster.rarity === 'rare' ? 'rare' : monster.rarity === 'uncommon' ? 'normal' : 'normal';
+    UIRenderer.toast(`${monster.emoji} ${monster.name}（${tier}）誕生！`, badge);
+  }
+  UIRenderer.renderMonstersGrid();
+  UIRenderer.renderZukan();
+  RanchSystem.sync();
+  UIRenderer.renderRanch();
+  UIRenderer.updateStats();
+});
+
+EventBus.on('fused', ({ monster, isNew }) => {
+  UIRenderer.showHatchOverlay(monster, true);
+  showEvent(`🧬 ${monster.name} の合成に成功！`);
+  RanchSystem.sync();
+  UIRenderer.renderAll();
+});
+
+EventBus.on('ranchChanged', () => {
+  RanchSystem.sync();
+  UIRenderer.renderRanch();
+  UIRenderer.renderExpeditionList?.();
+  UIRenderer.renderMonstersGrid();
+});
+
+EventBus.on('expeditionsReturned', (exps) => {
+  for (const exp of exps) {
+    showNotice(`🎒 ${exp.label} を持って帰還！`);
+  }
+  UIRenderer.updateStats();
+});
+
+EventBus.on('stateReset', () => {
+  UIRenderer.renderAll();
+});
+
+/* ================================================================
+   DOM EVENT LISTENERS
+================================================================ */
+document.getElementById('egg-wrap').addEventListener('click', e => GameEngine.handleEggClick(e));
+document.getElementById('egg-wrap').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') GameEngine.handleEggClick(e);
+});
+document.getElementById('hatch-ok').addEventListener('click', () => {
+  document.getElementById('hatch-overlay').classList.remove('visible');
+});
+document.getElementById('btn-fuse').addEventListener('click', () => {
+  GameEngine.attemptFusion();
+});
+document.getElementById('btn-fuse-clear').addEventListener('click', () => {
+  StateManager.get().fusionSlots = [null, null];
+  UIRenderer.renderFusionPanel();
+  UIRenderer.renderMonstersGrid();
+});
+document.getElementById('btn-save').addEventListener('click', () => StateManager.save(false));
+document.getElementById('btn-export').addEventListener('click', () => StateManager.exportData());
+document.getElementById('btn-import').addEventListener('click', () => StateManager.importData());
+document.getElementById('btn-reset').addEventListener('click', () => StateManager.reset());
+document.getElementById('btn-mode-easy').addEventListener('click', () => {
+  StateManager.setDifficulty('easy');
+  UIRenderer.updateModeUI();
+});
+document.getElementById('btn-mode-hard').addEventListener('click', () => {
+  StateManager.setDifficulty('hard');
+  UIRenderer.updateModeUI();
+});
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1668,67 +1582,19 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-/* ============================================================
-   UTILS
-   ============================================================ */
-function buildMonsterImgTag(def, emojiSize) {
-  const sz = emojiSize ? `font-size:${emojiSize * 0.6}px` : 'font-size:1.8rem';
-  return `<img src="${def.imagePath}" alt="${def.name}"
-    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-    style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
-  <span style="display:none;${sz};align-items:center;justify-content:center;width:100%;height:100%;">${def.emoji}</span>`;
-}
-
-function formatNum(n) {
-  if (n >= 1e9) return (n/1e9).toFixed(2)+'B';
-  if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
-  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
-  return Math.floor(n).toString();
-}
-function formatTime(sec) {
-  sec = Math.floor(sec);
-  if (sec < 60) return sec+'秒';
-  if (sec < 3600) return Math.floor(sec/60)+'分'+( sec%60)+'秒';
-  return Math.floor(sec/3600)+'時間'+Math.floor((sec%3600)/60)+'分';
-}
-
-/* ============================================================
-   EVENT LISTENERS
-   ============================================================ */
-const eggWrap = document.getElementById('egg-wrap');
-eggWrap.addEventListener('click', handleEggClick);
-eggWrap.addEventListener('keydown', e => {
-  if (e.key==='Enter'||e.key===' ') handleEggClick(e);
-});
-
-document.getElementById('btn-fuse').addEventListener('click', attemptFusion);
-document.getElementById('btn-fuse-clear').addEventListener('click', clearFusion);
-document.getElementById('btn-save').addEventListener('click', () => saveGame(false));
-document.getElementById('btn-export').addEventListener('click', exportSave);
-document.getElementById('btn-import').addEventListener('click', importSave);
-document.getElementById('btn-reset').addEventListener('click', resetGame);
-
-/* ============================================================
+/* ================================================================
    INIT
-   ============================================================ */
+================================================================ */
 (function init() {
-  const loaded = loadGame();
+  const loaded = StateManager.load();
   if (loaded) {
-    processOfflineIncome();
-    showOfflineNotice('✅ セーブデータを読み込みました');
+    GameEngine.processOffline();
+    showNotice('✅ セーブデータを読み込みました');
   }
-  lastTick = Date.now();
-  renderAll();
-
-  // Game loop: 200ms
-  setInterval(gameTick, 200);
-  // Autosave: 30s
-  setInterval(() => saveGame(true), 30000);
-  // Re-render ranch occasionally for smooth feel
-  setInterval(() => {
-    syncRanchSlimes();
-    renderRanch();
-  }, 10000);
+  UIRenderer.renderAll();
+  setInterval(GameEngine.tick, 200);
+  setInterval(() => StateManager.save(true), 30000);
+  setInterval(() => { RanchSystem.sync(); UIRenderer.renderRanch(); }, 10000);
 })();
 </script>
 </body>
