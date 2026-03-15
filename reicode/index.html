@@ -1,202 +1,245 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>活動記録ダッシュボード レイコード</title>
+    <title>活動記録ダッシュボード Raicode</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         /* ==========================================
-           【デザイン設定】
+           【デザイン設定（ダーク/ライト対応）】
+           変更点: CSS変数をテーマごとに定義し、色合いを最適化
         ========================================== */
-        :root {
-            --bg-base: #f7f6f2;          /* 優しいベージュ */
+        :root[data-theme="light"] {
+            --bg-base: #f0f2f5;          /* よりクリーンな明るいグレー */
             --card-white: #ffffff;
-            --text-main: #5a5a5a;
-            --text-sub: #a0a0a0;
-            --accent-soft: #b8c6a3;      /* セージグリーン */
-            --radius-lg: 20px;
-            --radius-md: 12px;
-            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+            --text-main: #333333;        /* コントラストを上げた文字色 */
+            --text-sub: #777777;
+            --accent-soft: #85a98f;      /* 落ち着いたグリーン */
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 12px rgba(0,0,0,0.06);
+            --slider-bg: #e0e0e0;
         }
 
+        :root[data-theme="dark"] {
+            --bg-base: #121212;          /* 深いダーク背景 */
+            --card-white: #1e1e1e;       /* ダーク用カード背景 */
+            --text-main: #e0e0e0;        /* 眩しすぎない白文字 */
+            --text-sub: #999999;
+            --accent-soft: #a3b899;
+            --border-color: #333333;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3);
+            --slider-bg: #444444;
+        }
+
+        /* 変更点: 1画面に収めるための全体レイアウト調整（スクロール防止） */
         body {
             font-family: 'Noto Sans JP', sans-serif;
             background-color: var(--bg-base);
             color: var(--text-main);
             margin: 0;
-            padding: env(safe-area-inset-top) 16px 40px;
-            line-height: 1.6;
+            /* 画面高さ(100dvh)に固定し、はみ出さないように設定 */
+            height: 100dvh;
+            padding: env(safe-area-inset-top) 12px 12px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* ヘッダー・タイトル */
+        /* ヘッダー周りのマージンを圧縮 */
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
         .app-title {
-            text-align: center;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            margin: 15px 0 5px;
             color: var(--text-main);
             letter-spacing: 0.1em;
+            margin: 0;
+        }
+
+        .theme-toggle-btn {
+            background: none; border: none; font-size: 1.2rem; color: var(--text-main); cursor: pointer;
         }
 
         .total-card {
             background: var(--card-white);
-            border-radius: var(--radius-lg);
-            padding: 24px 20px;
+            border-radius: 16px;
+            padding: 12px;
             text-align: center;
             box-shadow: var(--shadow);
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         
         .total-value { 
-            font-size: 2.4rem; 
+            font-size: 2rem; 
             font-weight: 700; 
             color: var(--text-main); 
-            display: block;
-            line-height: 1.2;
+            line-height: 1.1;
         }
 
-        .unit-toggle {
-            display: flex; justify-content: center; gap: 8px; margin-top: 15px;
-        }
+        .unit-toggle { display: flex; justify-content: center; gap: 8px; margin-top: 6px; }
         .unit-btn {
-            background: #eee; border: none; padding: 6px 14px; border-radius: 20px;
-            font-size: 0.75rem; color: var(--text-sub); cursor: pointer;
-            font-family: inherit; transition: 0.2s;
+            background: var(--border-color); border: none; padding: 4px 12px; border-radius: 20px;
+            font-size: 0.7rem; color: var(--text-sub);
         }
-        .unit-btn.active { background: var(--text-main); color: #fff; }
+        .unit-btn.active { background: var(--text-main); color: var(--card-white); }
 
-        /* 項目選択グリッド */
         .item-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;
         }
         .item-tile {
-            background: var(--card-white); border-radius: var(--radius-md); padding: 15px 5px;
-            text-align: center; font-size: 0.85rem; font-weight: 700; border: 2px solid transparent;
+            background: var(--card-white); border-radius: 12px; padding: 10px 4px;
+            text-align: center; font-size: 0.8rem; font-weight: 700; border: 2px solid transparent;
             transition: all 0.2s; box-shadow: var(--shadow);
         }
-        .item-tile.active { transform: scale(0.96); }
+        .item-tile.active { transform: scale(0.95); }
 
         .card {
-            background: var(--card-white); border-radius: var(--radius-lg); padding: 20px;
-            margin-bottom: 20px; box-shadow: var(--shadow);
+            background: var(--card-white); border-radius: 16px; padding: 12px 16px;
+            margin-bottom: 12px; box-shadow: var(--shadow);
         }
 
-        /* 操作パネル */
-        .slider-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
-        #target-label { font-weight: 700; color: var(--text-main); }
-        #range-val { font-size: 1.6rem; font-weight: 700; }
+        .slider-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0; }
+        #target-label { font-weight: 700; color: var(--text-main); font-size: 0.9rem;}
+        #range-val { font-size: 1.4rem; font-weight: 700; }
 
         input[type=range] {
-            -webkit-appearance: none; width: 100%; background: transparent; margin: 20px 0;
+            -webkit-appearance: none; width: 100%; background: transparent; margin: 12px 0;
         }
-        input[type=range]::-webkit-slider-runnable-track {
-            height: 8px; background: #f0f0f0; border-radius: 4px;
-        }
+        input[type=range]::-webkit-slider-runnable-track { height: 6px; background: var(--slider-bg); border-radius: 3px; }
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 30px; width: 30px; border-radius: 50%;
-            background: #fff; border: 3px solid var(--text-main); margin-top: -11px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            -webkit-appearance: none; height: 26px; width: 26px; border-radius: 50%;
+            background: var(--card-white); border: 3px solid var(--text-main); margin-top: -10px;
         }
 
         .save-btn {
-            width: 100%; padding: 16px; border-radius: var(--radius-md); border: none;
-            background: var(--text-main); color: white; font-size: 1rem; font-weight: 700;
-            font-family: inherit; cursor: pointer;
+            width: 100%; padding: 12px; border-radius: 10px; border: none;
+            background: var(--text-main); color: var(--card-white); font-size: 0.9rem; font-weight: 700;
         }
 
-        /* 統計タブ */
-        .tab-box {
-            display: flex; background: #f0f0f0; border-radius: 12px; padding: 4px; margin-bottom: 15px;
+        /* 変更点: グラフ2つを横並びにして縦スクロールを回避 */
+        .charts-wrapper {
+            display: flex;
+            gap: 12px;
+            flex: 1; /* 残りの高さを埋める */
+            min-height: 0; /* Flexboxのはみ出し防止 */
         }
-        .tab {
-            flex: 1; text-align: center; padding: 8px; border-radius: 8px;
-            font-size: 0.8rem; font-weight: 700; color: var(--text-sub); cursor: pointer;
+        .chart-card {
+            background: var(--card-white); border-radius: 16px; padding: 10px;
+            box-shadow: var(--shadow); flex: 1; display: flex; flex-direction: column;
         }
-        .tab.active { background: #fff; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .chart-title { font-weight: 700; font-size: 0.8rem; margin-bottom: 8px; text-align: center;}
+        
+        .tab-box { display: flex; background: var(--bg-base); border-radius: 8px; padding: 2px; margin-bottom: 8px; }
+        .tab { flex: 1; text-align: center; padding: 4px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; color: var(--text-sub); }
+        .tab.active { background: var(--card-white); color: var(--text-main); box-shadow: var(--shadow); }
 
-        canvas { width: 100%; height: auto; }
+        .canvas-container { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center;}
+        canvas { max-height: 100%; max-width: 100%; object-fit: contain; }
 
-        /* モーダル */
-        #modal {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(6px); z-index: 1000; padding: 20px;
+        /* モーダル群 */
+        .modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px); z-index: 1000; padding: 20px; align-items: center; justify-content: center;
         }
         .modal-body {
-            background: #fff; padding: 24px; border-radius: var(--radius-lg); max-height: 85vh; overflow-y: auto;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            background: var(--card-white); padding: 20px; border-radius: 16px; width: 100%; max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .item-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .item-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 0.9rem;}
     </style>
 </head>
 <body>
 
-    <div class="app-title">RayCode</div>
-
-    <div class="header">
-        <div class="total-card">
-            <span style="font-size: 0.85rem; color: var(--text-sub); font-weight: 700;">TOTAL ACTIVITY</span>
-            <span class="total-value" id="display-total">0</span>
-            <div class="unit-toggle">
-                <button class="unit-btn active" onclick="setUnit('min', this)">分</button>
-                <button class="unit-btn" onclick="setUnit('hour', this)">時間</button>
-                <button class="unit-btn" onclick="setUnit('day', this)">日</button>
-            </div>
+    <div class="header-row">
+        <h1 class="app-title">Raicode</h1>
+        <div>
+            <button onclick="toggleLogModal(true)" style="background:none; border:none; color:var(--text-sub); font-weight:700; font-size:0.8rem; margin-right:10px;">📋 今日のログ</button>
+            <button class="theme-toggle-btn" onclick="toggleTheme()">🌗</button>
         </div>
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 5px 12px;">
-        <span style="font-weight: 700; font-size: 0.95rem;">項目を選択</span>
-        <button onclick="toggleModal(true)" style="background:none; border:none; color:var(--text-sub); font-size: 0.8rem; font-weight: 700;">編集</button>
+    <div class="total-card">
+        <span style="font-size: 0.75rem; color: var(--text-sub); font-weight: 700;">TOTAL ACTIVITY</span>
+        <span class="total-value" id="display-total">0</span>
+        <div class="unit-toggle">
+            <button class="unit-btn active" onclick="setUnit('min', this)">分</button>
+            <button class="unit-btn" onclick="setUnit('hour', this)">時間</button>
+            <button class="unit-btn" onclick="setUnit('day', this)">日</button>
+        </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 4px 8px;">
+        <span style="font-weight: 700; font-size: 0.85rem;">項目を選択</span>
+        <button onclick="toggleModal(true)" style="background:none; border:none; color:var(--text-sub); font-size: 0.75rem; font-weight: 700;">⚙️ 編集</button>
     </div>
 
     <div class="item-grid" id="item-grid"></div>
 
-    <div class="card">
+    <div class="card" style="margin-bottom: 12px;">
         <div class="slider-header">
             <span id="target-label">項目を選択してください</span>
-            <span id="range-val">0<small style="font-size: 0.9rem; margin-left:2px;">分</small></span>
+            <span id="range-val">0<small style="font-size: 0.8rem; margin-left:2px;">分</small></span>
         </div>
         <input type="range" id="slider" min="0" max="180" step="5" value="0" oninput="onSliderChange()">
         <button class="save-btn" onclick="saveData()">記録を保存</button>
     </div>
 
-    <div class="card">
-        <span style="font-weight: 700; display: block; margin-bottom: 20px; font-size: 0.95rem;">今日の分布</span>
-        <div style="aspect-ratio: 1/1; max-width: 240px; margin: 0 auto;">
-            <canvas id="donutChart"></canvas>
+    <div class="charts-wrapper">
+        <div class="chart-card">
+            <div class="chart-title">今日の分布</div>
+            <div class="canvas-container">
+                <canvas id="donutChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="tab-box">
+                <div class="tab active" onclick="switchTab('day', this)">日</div>
+                <div class="tab" onclick="switchTab('week', this)">週</div>
+                <div class="tab" onclick="switchTab('month', this)">月</div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="barChart"></canvas>
+            </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="tab-box">
-            <div class="tab active" onclick="switchTab('day', this)">日</div>
-            <div class="tab" onclick="switchTab('week', this)">週</div>
-            <div class="tab" onclick="switchTab('month', this)">月</div>
-            <div class="tab" onclick="switchTab('year', this)">年</div>
-        </div>
-        <div style="aspect-ratio: 1.6/1;">
-            <canvas id="barChart"></canvas>
-        </div>
-    </div>
-
-    <div id="modal">
+    <div id="modal" class="modal">
         <div class="modal-body">
             <div class="modal-header">
-                <h3 style="margin:0">項目設定</h3>
+                <h3 style="margin:0; font-size: 1.1rem;">項目設定</h3>
                 <button onclick="toggleModal(false)" style="background:none; border:none; font-size:1.2rem; color:var(--text-sub);">✕</button>
             </div>
-            <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <input type="text" id="new-item-input" placeholder="新しい項目名" style="flex:1; padding:12px; border:1px solid #ddd; border-radius:10px; font-family:inherit;">
-                <button onclick="addItem()" style="background:var(--accent-soft); color:#fff; border:none; padding:0 20px; border-radius:10px; font-weight:700;">追加</button>
+            <div style="display:flex; gap:8px; margin-bottom:15px;">
+                <input type="text" id="new-item-input" placeholder="新しい項目名" style="flex:1; padding:10px; border:1px solid var(--border-color); border-radius:8px; font-family:inherit; background:var(--bg-base); color:var(--text-main);">
+                <button onclick="addItem()" style="background:var(--accent-soft); color:#fff; border:none; padding:0 15px; border-radius:8px; font-weight:700;">追加</button>
             </div>
             <div id="edit-list"></div>
+        </div>
+    </div>
+
+    <div id="log-modal" class="modal">
+        <div class="modal-body">
+            <div class="modal-header">
+                <h3 style="margin:0; font-size: 1.1rem;">今日の記録ログ</h3>
+                <button onclick="toggleLogModal(false)" style="background:none; border:none; font-size:1.2rem; color:var(--text-sub);">✕</button>
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-sub); margin-top:0;">間違えて登録した記録を取り消せます</p>
+            <div id="today-log-list"></div>
         </div>
     </div>
 
@@ -205,35 +248,73 @@
         // 【システム設定】
         // ==========================================
         const SETTINGS = {
-            storageKey: "raycode_v1_records",
-            itemKey: "raycode_v1_items",
+            storageKey: "raicode_v1_records",
+            itemKey: "raicode_v1_items",
+            logKey: "raicode_v1_today_logs", // 新規: 今日の生ログ保存用
+            themeKey: "raicode_v1_theme",    // 新規: テーマ保存用
             defaultItems: ["勉強", "絵", "筋トレ", "編集", "読書"],
-            // パステルパレット
-            colors: ["#b8c6a3", "#9bb7d4", "#e5989b", "#d4c8a5", "#b3a5d4", "#f5cac3", "#82c1cf", "#e9edc9"]
+            // 色合い変更: ライト/ダーク両方で映える、彩度を少し抑えた上品なパステル
+            lightColors: ["#a8c3a6", "#9cb4d4", "#dfa8a6", "#cbbfa4", "#b2a8c3", "#e0b8b4", "#8bbbc7", "#d5d9b4"],
+            darkColors: ["#799178", "#6c85a6", "#b37b79", "#a3977a", "#867a99", "#b38985", "#5c8a96", "#a6ab83"]
         };
 
         let state = {
             items: [],
             records: {}, 
+            todayLogs: { date: "", entries: [] }, // 新規: { date: "YYYY-MM-DD", entries: [{id, item, min, time}] }
             selectedItem: null,
             totalUnit: 'min',
-            currentTab: 'day'
+            currentTab: 'day',
+            isDark: false
         };
 
         // ==========================================
-        // 【コア・ロジック】
+        // 【コア・ロジック】既存機能の保護・拡張
         // ==========================================
         function init() {
+            // テーマのロード
+            const savedTheme = localStorage.getItem(SETTINGS.themeKey);
+            if(savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)){
+                state.isDark = true;
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+
             const savedItems = localStorage.getItem(SETTINGS.itemKey);
             state.items = savedItems ? JSON.parse(savedItems) : [...SETTINGS.defaultItems];
+            
             const savedRecords = localStorage.getItem(SETTINGS.storageKey);
             state.records = savedRecords ? JSON.parse(savedRecords) : {};
+
+            // ログのロード (今日以外のデータは破棄)
+            const savedLogs = localStorage.getItem(SETTINGS.logKey);
+            const todayStr = new Date().toLocaleDateString('en-CA');
+            if(savedLogs) {
+                const parsed = JSON.parse(savedLogs);
+                if(parsed.date === todayStr) state.todayLogs = parsed;
+                else state.todayLogs = { date: todayStr, entries: [] };
+            } else {
+                state.todayLogs = { date: todayStr, entries: [] };
+            }
 
             renderItemGrid();
             refreshCharts();
             updateTotalDisplay();
         }
 
+        function toggleTheme() {
+            state.isDark = !state.isDark;
+            document.documentElement.setAttribute('data-theme', state.isDark ? 'dark' : 'light');
+            localStorage.setItem(SETTINGS.themeKey, state.isDark ? 'dark' : 'light');
+            renderItemGrid(); // 色が変わるため再描画
+            refreshCharts();
+        }
+
+        // 現在のテーマに応じたカラーパレットを取得
+        function getColors() {
+            return state.isDark ? SETTINGS.darkColors : SETTINGS.lightColors;
+        }
+
+        // 保存時にログデータも追記する（元の集計ロジックは完全維持）
         function saveData() {
             if (!state.selectedItem) return alert("項目を選択してください");
             const min = parseInt(document.getElementById('slider').value);
@@ -242,17 +323,54 @@
             const today = new Date().toLocaleDateString('en-CA');
             if (!state.records[today]) state.records[today] = {};
             state.records[today][state.selectedItem] = (state.records[today][state.selectedItem] || 0) + min;
-
             localStorage.setItem(SETTINGS.storageKey, JSON.stringify(state.records));
             
+            // --- 新規: ログの記録 ---
+            if(state.todayLogs.date !== today) state.todayLogs = { date: today, entries: [] };
+            const nowTime = new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'});
+            state.todayLogs.entries.push({ id: Date.now(), item: state.selectedItem, min: min, time: nowTime });
+            localStorage.setItem(SETTINGS.logKey, JSON.stringify(state.todayLogs));
+            // ------------------------
+
             document.getElementById('slider').value = 0;
             onSliderChange();
+            refreshCharts();
+            updateTotalDisplay();
+            
+            // 保存成功のフィードバック
+            const btn = document.querySelector('.save-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "✓ 保存しました";
+            setTimeout(() => btn.innerText = originalText, 1000);
+        }
+
+        // 新規: 誤登録の取消処理
+        function cancelLog(id) {
+            const idx = state.todayLogs.entries.findIndex(e => e.id === id);
+            if(idx === -1) return;
+            
+            const log = state.todayLogs.entries[idx];
+            const today = state.todayLogs.date;
+
+            // 集計データから減算
+            if(state.records[today] && state.records[today][log.item]) {
+                state.records[today][log.item] -= log.min;
+                // 0以下になったらキーごと削除
+                if(state.records[today][log.item] <= 0) delete state.records[today][log.item];
+                localStorage.setItem(SETTINGS.storageKey, JSON.stringify(state.records));
+            }
+
+            // ログリストから削除
+            state.todayLogs.entries.splice(idx, 1);
+            localStorage.setItem(SETTINGS.logKey, JSON.stringify(state.todayLogs));
+
+            renderLogList();
             refreshCharts();
             updateTotalDisplay();
         }
 
         // ==========================================
-        // 【表示・計算】
+        // 【表示・計算】既存維持
         // ==========================================
         function setUnit(unit, el) {
             state.totalUnit = unit;
@@ -285,12 +403,15 @@
         // ==========================================
         function renderItemGrid() {
             const container = document.getElementById('item-grid');
+            const colors = getColors();
             container.innerHTML = state.items.map((name, i) => {
-                const color = SETTINGS.colors[i % SETTINGS.colors.length];
+                const color = colors[i % colors.length];
                 return `<div class="item-tile" id="tile-${name}" onclick="selectItem('${name}')" 
-                        style="background: ${color}15; color: ${color};">${name}</div>`;
+                        style="background: ${color}20; color: ${color};">${name}</div>`;
             }).join('');
-            if (state.selectedItem) selectItem(state.selectedItem);
+            if (state.selectedItem && state.items.includes(state.selectedItem)) {
+                selectItem(state.selectedItem);
+            }
         }
 
         function selectItem(name) {
@@ -303,30 +424,39 @@
             });
             const activeTile = document.getElementById(`tile-${name}`);
             if(activeTile) {
-                const color = SETTINGS.colors[state.items.indexOf(name) % SETTINGS.colors.length];
+                const colors = getColors();
+                const color = colors[state.items.indexOf(name) % colors.length];
                 activeTile.classList.add('active');
                 activeTile.style.borderColor = color;
-                activeTile.style.boxShadow = `0 4px 15px ${color}33`;
-                activeTile.style.background = `${color}25`;
+                activeTile.style.background = `${color}40`;
             }
         }
 
         function onSliderChange() {
             const val = document.getElementById('slider').value;
-            document.getElementById('range-val').innerHTML = `${val}<small style="font-size: 0.9rem; margin-left:2px;">分</small>`;
+            document.getElementById('range-val').innerHTML = `${val}<small style="font-size: 0.8rem; margin-left:2px;">分</small>`;
         }
 
         // ==========================================
-        // 【グラフ: Canvas】
+        // 【グラフ: Canvas】(サイズを枠に合わせる処理強化)
         // ==========================================
-        function refreshCharts() { drawDonut(); drawBar(); }
+        function refreshCharts() {
+            // リサイズ時のちらつきを防止するため少し遅延させる
+            requestAnimationFrame(() => {
+                drawDonut(); 
+                drawBar();
+            });
+        }
 
         function drawDonut() {
             const canvas = document.getElementById('donutChart');
             const ctx = canvas.getContext('2d');
+            const container = canvas.parentElement;
+            const size = Math.min(container.clientWidth, container.clientHeight);
             const dpr = window.devicePixelRatio || 1;
-            const size = canvas.parentElement.clientWidth;
+            
             canvas.width = size * dpr; canvas.height = size * dpr;
+            canvas.style.width = `${size}px`; canvas.style.height = `${size}px`;
             ctx.scale(dpr, dpr);
 
             const today = new Date().toLocaleDateString('en-CA');
@@ -335,72 +465,83 @@
             const total = entries.reduce((s, [k, v]) => s + v, 0);
 
             ctx.clearRect(0,0,size,size);
-            const cx = size/2, cy = size/2, r = size/2 - 10;
+            const cx = size/2, cy = size/2, r = size/2 - 4; // 余白縮小
 
             if (total === 0) {
                 ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
-                ctx.fillStyle = "#f8f8f8"; ctx.fill();
+                ctx.fillStyle = state.isDark ? "#333" : "#f0f0f0"; ctx.fill();
                 return;
             }
 
             let start = -Math.PI/2;
+            const colors = getColors();
             entries.forEach(([name, val]) => {
                 const slice = (val / total) * Math.PI * 2;
                 const idx = state.items.indexOf(name);
-                ctx.fillStyle = SETTINGS.colors[idx % SETTINGS.colors.length] || "#ddd";
+                ctx.fillStyle = colors[idx % colors.length] || "#888";
                 ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, start, start + slice); ctx.fill();
                 start += slice;
             });
-            ctx.beginPath(); ctx.arc(cx, cy, r*0.65, 0, Math.PI*2); ctx.fillStyle = "#fff"; ctx.fill();
+            // 穴開け
+            ctx.beginPath(); ctx.arc(cx, cy, r*0.6, 0, Math.PI*2); 
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-white').trim(); 
+            ctx.fill();
         }
 
         function drawBar() {
             const canvas = document.getElementById('barChart');
             const ctx = canvas.getContext('2d');
+            const container = canvas.parentElement;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
             const dpr = window.devicePixelRatio || 1;
-            const w = canvas.parentElement.clientWidth;
-            const h = canvas.parentElement.clientHeight;
+            
             canvas.width = w * dpr; canvas.height = h * dpr;
+            canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
             ctx.scale(dpr, dpr);
 
             const stats = getChartData();
             const max = Math.max(...stats.values, 60);
-            const padX = 35, padY = 25;
+            const padX = 10, padY = 20; // 狭い空間用にパディング縮小
             const graphW = w - padX * 2;
             const graphH = h - padY * 2;
-            const step = graphW / stats.values.length;
+            const step = graphW / Math.max(stats.values.length, 1);
 
             ctx.clearRect(0,0,w,h);
             stats.values.forEach((v, i) => {
-                const barW = step * 0.6;
+                const barW = step * 0.5;
                 const x = padX + i * step + (step - barW)/2;
                 const barH = (v / max) * graphH;
                 
-                ctx.fillStyle = "#d0d0d0";
-                if(ctx.roundRect) ctx.roundRect(x, h-padY-barH, barW, barH, 6);
+                ctx.fillStyle = state.isDark ? "#555" : "#ccc";
+                if(ctx.roundRect) ctx.roundRect(x, h-padY-barH, barW, barH, 4);
                 else ctx.fillRect(x, h-padY-barH, barW, barH);
                 ctx.fill();
 
-                ctx.fillStyle = varColor('--text-sub');
-                ctx.font = "bold 10px 'Noto Sans JP'";
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-sub').trim();
+                ctx.font = "bold 9px 'Noto Sans JP'";
                 ctx.textAlign = "center";
-                ctx.fillText(stats.labels[i], x + barW/2, h - 8);
-                if(v > 0) ctx.fillText(v, x + barW/2, h - padY - barH - 6);
+                ctx.fillText(stats.labels[i], x + barW/2, h - 5);
+                
+                if(v > 0) {
+                    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-main').trim();
+                    ctx.fillText(v, x + barW/2, h - padY - barH - 4);
+                }
             });
         }
 
         function getChartData() {
             const labels = []; const values = []; const now = new Date();
             if (state.currentTab === 'day') {
-                for (let i = 6; i >= 0; i--) {
+                for (let i = 4; i >= 0; i--) { // 幅が狭いので直近5日に変更
                     const d = new Date(); d.setDate(now.getDate() - i);
                     labels.push(`${d.getDate()}日`);
                     values.push(Object.values(state.records[d.toLocaleDateString('en-CA')] || {}).reduce((a,b)=>a+b,0));
                 }
             } else if (state.currentTab === 'week') {
-                for (let i = 3; i >= 0; i--) {
+                for (let i = 2; i >= 0; i--) { // 直近3週
                     labels.push(i === 0 ? "今週" : `${i}週前`);
-                    let v = 0; // 簡易：直近28日を4分割
+                    let v = 0;
                     for(let j=0; j<7; j++) {
                         const d = new Date(); d.setDate(now.getDate() - (i*7 + j));
                         v += Object.values(state.records[d.toLocaleDateString('en-CA')] || {}).reduce((a,b)=>a+b,0);
@@ -408,7 +549,7 @@
                     values.push(v);
                 }
             } else if (state.currentTab === 'month') {
-                for (let i = 5; i >= 0; i--) {
+                for (let i = 2; i >= 0; i--) { // 直近3ヶ月
                     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
                     labels.push(`${d.getMonth()+1}月`);
                     let v = 0;
@@ -416,14 +557,6 @@
                         const rd = new Date(k);
                         if(rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear()) v += Object.values(state.records[k]).reduce((a,b)=>a+b,0);
                     });
-                    values.push(v);
-                }
-            } else {
-                const year = now.getFullYear();
-                for (let i = 2; i >= 0; i--) {
-                    labels.push(`${year-i}年`);
-                    let v = 0;
-                    Object.keys(state.records).forEach(k => { if(k.startsWith(year-i)) v += Object.values(state.records[k]).reduce((a,b)=>a+b,0); });
                     values.push(v);
                 }
             }
@@ -438,10 +571,17 @@
         }
 
         // ==========================================
-        // 【その他ユーティリティ】
+        // 【モーダル制御群】
         // ==========================================
-        function toggleModal(s) { document.getElementById('modal').style.display = s ? 'block' : 'none'; if(s) renderEditList(); }
-        function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+        function toggleModal(s) { 
+            document.getElementById('modal').style.display = s ? 'flex' : 'none'; 
+            if(s) renderEditList(); 
+        }
+
+        function toggleLogModal(s) {
+            document.getElementById('log-modal').style.display = s ? 'flex' : 'none';
+            if(s) renderLogList();
+        }
 
         function renderEditList() {
             const container = document.getElementById('edit-list');
@@ -453,6 +593,25 @@
             `).join('');
         }
 
+        function renderLogList() {
+            const container = document.getElementById('today-log-list');
+            if(state.todayLogs.entries.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-sub); margin-top:20px;">今日の記録はありません</p>`;
+                return;
+            }
+            // 最新の記録が上に来るように反転して表示
+            container.innerHTML = [...state.todayLogs.entries].reverse().map(log => `
+                <div class="item-row">
+                    <div>
+                        <span style="color:var(--text-sub); font-size:0.8rem; margin-right:8px;">${log.time}</span>
+                        <span style="font-weight:700;">${log.item}</span>
+                        <span style="margin-left:8px;">${log.min}分</span>
+                    </div>
+                    <button onclick="cancelLog(${log.id})" style="color:#e5989b; border:none; background:none; font-weight:700;">取消</button>
+                </div>
+            `).join('');
+        }
+
         function addItem() {
             const input = document.getElementById('new-item-input');
             const val = input.value.trim();
@@ -460,7 +619,7 @@
                 state.items.push(val);
                 input.value = "";
                 localStorage.setItem(SETTINGS.itemKey, JSON.stringify(state.items));
-                renderItemGrid(); renderEditList();
+                renderItemGrid(); renderEditList(); refreshCharts();
             }
         }
 
@@ -468,11 +627,15 @@
             if(confirm("この項目を一覧から削除しますか？（過去の記録は保持されます）")) {
                 state.items.splice(i, 1);
                 localStorage.setItem(SETTINGS.itemKey, JSON.stringify(state.items));
-                renderItemGrid(); renderEditList();
+                if(state.selectedItem === state.items[i]) state.selectedItem = null;
+                renderItemGrid(); renderEditList(); refreshCharts();
             }
         }
 
+        // 画面リサイズ時にレイアウトが崩れないようチャートを再描画
         window.addEventListener('resize', refreshCharts);
+        
+        // 起動処理
         init();
     </script>
 </body>
