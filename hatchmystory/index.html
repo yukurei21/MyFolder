@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>モンスター孵化クリッカー</title>
+<style>
+  /* ===== CSS Variables & Reset ===== */
+  :root {
+    --bg: #f0ece8;
+    --bg2: #faf7f4;
+    --panel: #ffffff;
+    --border: #e8e0d8;
+    --accent1: #b8a9e0;   /* lavender */
+    --accent2: #a8d8b0;   /* mint */
+    --accent3: #f5c8a0;   /* peach */
+    --accent4: #f0a8c0;   /* pink */
+    --text: #4a4060;
+    --text2: #7a7090;
+    --text3: #a09ab0;
+    --shadow: 0 2px 12px rgba(100,80,150,0.08);
+    --shadow-lg: 0 6px 24px rgba(100,80,150,0.14);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ===== Layout ===== */
+  #app {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  @media (min-width: 900px) {
+    #app {
+      max-width: 960px;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr auto;
+    }
+    header { grid-column: 1 / -1; }
+    #left-panel { grid-column: 1; grid-row: 2; overflow-y: auto; }
+    #right-panel { grid-column: 2; grid-row: 2; overflow-y: auto; }
+    footer { grid-column: 1 / -1; grid-row: 3; }
+  }
+
+  /* ===== Header ===== */
+  header {
+    background: linear-gradient(135deg, var(--accent1) 0%, var(--accent4) 100%);
+    padding: 14px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    letter-spacing: 0.04em;
+  }
+  .header-stats {
+    display: flex; gap: 12px;
+  }
+  .stat-chip {
+    background: rgba(255,255,255,0.35);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #fff;
+    display: flex; align-items: center; gap: 5px;
+    backdrop-filter: blur(6px);
+  }
+  .stat-chip .icon { font-size: 1rem; }
+
+  /* ===== Panels ===== */
+  #left-panel, #right-panel {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ===== Card ===== */
+  .card {
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ===== Egg Area ===== */
+  #egg-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 18px;
+  }
+  #egg-wrap {
+    position: relative;
+    width: 140px; height: 160px;
+    cursor: pointer;
+    user-select: none;
+    filter: drop-shadow(0 6px 16px rgba(180,150,220,0.3));
+    transition: transform 0.08s;
+  }
+  #egg-wrap:active { transform: scale(0.93); }
+  #egg-svg { width: 100%; height: 100%; }
+  /* crack lines */
+  .crack { stroke: rgba(255,255,255,0.7); stroke-width: 2; fill: none; stroke-linecap: round; opacity: 0; transition: opacity 0.3s; }
+  .crack.visible { opacity: 1; }
+
+  /* glow pulse */
+  @keyframes eggGlow {
+    0%,100% { filter: drop-shadow(0 6px 16px rgba(180,150,220,0.3)); }
+    50% { filter: drop-shadow(0 6px 28px rgba(200,160,255,0.7)); }
+  }
+  #egg-wrap.glowing { animation: eggGlow 1.2s ease-in-out infinite; }
+
+  /* shake */
+  @keyframes eggShake {
+    0%,100% { transform: rotate(0deg); }
+    20% { transform: rotate(-5deg); }
+    40% { transform: rotate(5deg); }
+    60% { transform: rotate(-3deg); }
+    80% { transform: rotate(3deg); }
+  }
+  #egg-wrap.shaking { animation: eggShake 0.4s ease; }
+
+  /* energy bar */
+  #energy-bar-wrap {
+    width: 100%;
+    background: #ede8f5;
+    border-radius: 20px;
+    height: 14px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+  }
+  #energy-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent1), var(--accent4));
+    border-radius: 20px;
+    transition: width 0.15s ease;
+    min-width: 0;
+  }
+  #energy-label {
+    font-size: 0.78rem;
+    color: var(--text2);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  #click-hint {
+    font-size: 0.75rem;
+    color: var(--text3);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+
+  /* ===== Float Text ===== */
+  .float-text {
+    position: fixed;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent1);
+    pointer-events: none;
+    animation: floatUp 0.8s ease forwards;
+    z-index: 9999;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-50px) scale(1.3); }
+  }
+
+  /* ===== Monsters Grid ===== */
+  #monsters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 10px;
+  }
+  .monster-card {
+    background: linear-gradient(135deg, #f5f0ff, #ffeef8);
+    border-radius: var(--radius-sm);
+    padding: 10px 6px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    border: 1.5px solid #e8dff5;
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .monster-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .monster-img-wrap {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--accent2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+  }
+  .monster-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .monster-name { font-size: 0.68rem; font-weight: 700; color: var(--text); text-align: center; }
+  .monster-count {
+    position: absolute; top: 4px; right: 6px;
+    font-size: 0.65rem; font-weight: 700;
+    color: var(--accent1);
+  }
+  .monster-income { font-size: 0.62rem; color: var(--text3); }
+  .monster-new-badge {
+    position: absolute; top: -4px; left: -4px;
+    background: var(--accent4);
+    color: #fff; font-size: 0.55rem; font-weight: 700;
+    border-radius: 6px; padding: 2px 5px;
+    animation: badgePop 0.4s ease;
+  }
+  @keyframes badgePop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
+  .empty-monsters {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text3);
+    font-size: 0.8rem;
+    padding: 16px;
+  }
+
+  /* ===== Hatch Animation Overlay ===== */
+  #hatch-overlay {
+    position: fixed; inset: 0;
+    background: rgba(255,255,255,0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    backdrop-filter: blur(4px);
+  }
+  #hatch-overlay.visible { opacity: 1; pointer-events: all; }
+  #hatch-monster-img {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--accent2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 4rem;
+    box-shadow: 0 8px 32px rgba(180,150,220,0.4);
+    animation: popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  #hatch-monster-img img { width: 100%; height: 100%; object-fit: cover; }
+  #hatch-title {
+    font-size: 1.4rem; font-weight: 800;
+    color: var(--text);
+    animation: fadeSlideUp 0.4s 0.2s ease both;
+  }
+  #hatch-desc {
+    font-size: 0.88rem; color: var(--text2);
+    text-align: center; max-width: 280px; line-height: 1.5;
+    animation: fadeSlideUp 0.4s 0.3s ease both;
+  }
+  #hatch-ok {
+    background: linear-gradient(135deg, var(--accent1), var(--accent4));
+    color: #fff; border: none;
+    padding: 12px 36px; border-radius: 50px;
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.1s;
+    animation: fadeSlideUp 0.4s 0.4s ease both;
+  }
+  #hatch-ok:active { transform: scale(0.95); }
+  @keyframes fadeSlideUp {
+    0% { opacity:0; transform: translateY(16px); }
+    100% { opacity:1; transform: translateY(0); }
+  }
+
+  /* ===== Tab Bar ===== */
+  #tab-bar {
+    display: flex; gap: 0;
+    background: var(--panel);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1; padding: 10px 4px;
+    background: none; border: none;
+    font-size: 0.75rem; font-weight: 600;
+    color: var(--text3); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .tab-btn .tab-icon { font-size: 1.2rem; }
+  .tab-btn.active { color: var(--accent1); background: #f5f0ff; }
+  .tab-btn:hover:not(.active) { background: var(--bg); }
+
+  /* ===== Tab Content ===== */
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ===== Zukan ===== */
+  #zukan-list { display: flex; flex-direction: column; gap: 12px; }
+  .zukan-entry {
+    display: flex; gap: 12px; align-items: center;
+    padding: 12px; border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, #f8f4ff, #fff6fb);
+    border: 1.5px solid #ede5fa;
+  }
+  .zukan-img {
+    width: 56px; height: 56px; flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--accent2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    overflow: hidden;
+  }
+  .zukan-img img { width: 100%; height: 100%; object-fit: cover; }
+  .zukan-img.locked { filter: grayscale(1) brightness(0.6); }
+  .zukan-info { flex: 1; }
+  .zukan-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 3px; }
+  .zukan-desc { font-size: 0.78rem; color: var(--text2); line-height: 1.4; }
+  .zukan-count-badge {
+    background: var(--accent1);
+    color: #fff; border-radius: 12px; padding: 2px 8px;
+    font-size: 0.68rem; font-weight: 700;
+    white-space: nowrap;
+  }
+  .zukan-entry.undiscovered .zukan-name,
+  .zukan-entry.undiscovered .zukan-desc { color: var(--text3); }
+
+  /* ===== Stats Panel ===== */
+  #stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .stat-box {
+    background: linear-gradient(135deg, #f5f0ff, #fff0f8);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    border: 1.5px solid #ede5fa;
+  }
+  .stat-box-label { font-size: 0.7rem; color: var(--text3); font-weight: 600; margin-bottom: 4px; }
+  .stat-box-value { font-size: 1.2rem; font-weight: 800; color: var(--text); }
+  .stat-box-sub { font-size: 0.68rem; color: var(--text2); margin-top: 2px; }
+
+  /* ===== Save/Load buttons ===== */
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-secondary {
+    flex: 1; min-width: 80px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--bg2);
+    color: var(--text2);
+    font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--accent1); color: var(--accent1); background: #f5f0ff; }
+  .btn-danger {
+    background: #fff0f0; color: #e08080; border-color: #f5c0c0;
+  }
+  .btn-danger:hover { background: #ffe0e0; border-color: #e08080; color: #c04040; }
+
+  /* ===== Offline Notice ===== */
+  #offline-notice {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: #fff;
+    padding: 10px 22px; border-radius: 50px;
+    font-size: 0.82rem; font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 300;
+  }
+  #offline-notice.visible { opacity: 1; }
+
+  /* ===== Footer ===== */
+  footer {
+    text-align: center;
+    padding: 8px;
+    font-size: 0.68rem;
+    color: var(--text3);
+  }
+
+  /* ===== Scrollbar ===== */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d5cce8; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ===== Header ===== -->
+  <header>
+    <h1>🥚 モンスター孵化クリッカー</h1>
+    <div class="header-stats">
+      <div class="stat-chip"><span class="icon">💧</span><span id="hdr-gel">0</span></div>
+      <div class="stat-chip"><span class="icon">⚡</span><span id="hdr-gps">0/s</span></div>
+    </div>
+  </header>
+
+  <!-- ===== Left Panel: Egg ===== -->
+  <div id="left-panel">
+    <!-- Egg -->
+    <div class="card" id="egg-area">
+      <div class="card-title">🥚 孵化中の卵</div>
+      <div id="egg-wrap" role="button" aria-label="卵をクリック" tabindex="0">
+        <svg id="egg-svg" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="eggGrad" cx="40%" cy="35%">
+              <stop offset="0%" stop-color="#e8d8ff"/>
+              <stop offset="100%" stop-color="#c0a0e8"/>
+            </radialGradient>
+          </defs>
+          <!-- Egg body -->
+          <ellipse cx="70" cy="85" rx="52" ry="62" fill="url(#eggGrad)" stroke="#d0b8f0" stroke-width="2"/>
+          <!-- Shine -->
+          <ellipse cx="52" cy="58" rx="14" ry="9" fill="rgba(255,255,255,0.45)" transform="rotate(-20,52,58)"/>
+          <!-- Cracks (shown progressively) -->
+          <polyline id="crack1" class="crack" points="70,50 65,60 72,68"/>
+          <polyline id="crack2" class="crack" points="90,70 85,80 92,85"/>
+          <polyline id="crack3" class="crack" points="52,90 58,98 50,105"/>
+          <polyline id="crack4" class="crack" points="70,68 78,78 72,90 80,100"/>
+        </svg>
+      </div>
+      <div id="energy-bar-wrap"><div id="energy-bar" style="width:0%"></div></div>
+      <div id="energy-label">エネルギー: 0 / 100</div>
+      <div id="click-hint">👆 タップして孵化エネルギーを溜めよう！</div>
+    </div>
+
+    <!-- Monsters -->
+    <div class="card">
+      <div class="card-title">🐾 召喚済みモンスター</div>
+      <div id="monsters-grid">
+        <div class="empty-monsters">まだモンスターがいません</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Right Panel: Tabs ===== -->
+  <div id="right-panel">
+    <div id="tab-bar">
+      <button class="tab-btn active" data-tab="tab-status"><span class="tab-icon">📊</span>ステータス</button>
+      <button class="tab-btn" data-tab="tab-zukan"><span class="tab-icon">📖</span>図鑑</button>
+      <button class="tab-btn" data-tab="tab-settings"><span class="tab-icon">⚙️</span>設定</button>
+    </div>
+
+    <!-- Status Tab -->
+    <div class="tab-pane active card" id="tab-status">
+      <div class="card-title">📊 ステータス</div>
+      <div id="stats-grid">
+        <div class="stat-box">
+          <div class="stat-box-label">💧 所持ゲル</div>
+          <div class="stat-box-value" id="stat-gel">0</div>
+          <div class="stat-box-sub">生涯獲得: <span id="stat-total-gel">0</span></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">⚡ 毎秒収入</div>
+          <div class="stat-box-value" id="stat-gps">0</div>
+          <div class="stat-box-sub">ゲル/秒</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">🐾 モンスター数</div>
+          <div class="stat-box-value" id="stat-monsters">0</div>
+          <div class="stat-box-sub">種類: <span id="stat-species">0</span></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">🥚 孵化回数</div>
+          <div class="stat-box-value" id="stat-hatches">0</div>
+          <div class="stat-box-sub">クリック: <span id="stat-clicks">0</span></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">⚡ 現在エネルギー</div>
+          <div class="stat-box-value" id="stat-energy">0</div>
+          <div class="stat-box-sub">最大: <span id="stat-max-energy">100</span></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">⏱️ プレイ時間</div>
+          <div class="stat-box-value" id="stat-playtime">0分</div>
+          <div class="stat-box-sub">放置収入あり</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zukan Tab -->
+    <div class="tab-pane card" id="tab-zukan">
+      <div class="card-title">📖 モンスター図鑑</div>
+      <div id="zukan-list"></div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-pane card" id="tab-settings">
+      <div class="card-title">⚙️ 設定</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div class="stat-box-label" style="margin-bottom:8px;">セーブ / ロード</div>
+          <div class="btn-row">
+            <button class="btn-secondary" id="btn-save">💾 保存</button>
+            <button class="btn-secondary" id="btn-export">📤 エクスポート</button>
+            <button class="btn-secondary" id="btn-import">📥 インポート</button>
+          </div>
+        </div>
+        <div>
+          <div class="stat-box-label" style="margin-bottom:8px;">危険ゾーン</div>
+          <div class="btn-row">
+            <button class="btn-secondary btn-danger" id="btn-reset">🗑️ データリセット</button>
+          </div>
+        </div>
+        <div style="font-size:0.73rem;color:var(--text3);line-height:1.6;">
+          ゲームは自動的に30秒ごとにセーブされます。<br>
+          ブラウザを閉じても放置収入は次回起動時に精算されます。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>v0.1.0 MVP — Monster Hatch Clicker</footer>
+</div>
+
+<!-- ===== Hatch Overlay ===== -->
+<div id="hatch-overlay">
+  <div id="hatch-monster-img"></div>
+  <div id="hatch-title">新しいモンスター誕生！</div>
+  <div id="hatch-desc"></div>
+  <button id="hatch-ok">やった！</button>
+</div>
+
+<!-- ===== Offline Notice ===== -->
+<div id="offline-notice" id="offline-notice"></div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   DATA DEFINITIONS
+   拡張性のためすべてのゲームコンテンツをここで定義
+   ============================================================ */
+
+const MONSTER_DEFS = [
+  {
+    id: 'slime_green',
+    name: 'グリーンスライム',
+    emoji: '🟢',
+    imagePath: 'images/slime_green.png',
+    description: '草原に生息する愛らしいスライム。のんびり屋だが、意外とタフ。ゲルを毎秒少しずつ生産する。',
+    rarity: 'common',
+    gelPerSec: 1,
+    hatchWeight: 80,
+    hatchEnergyCost: 100,
+    bgColor: '#b8e8b0',
+  },
+  {
+    id: 'slime_pink',
+    name: 'ピンクスライム',
+    emoji: '🩷',
+    imagePath: 'images/slime_pink.png',
+    description: '甘い香りを放つ珍しいスライム。感情豊かで、飼い主に懐きやすい。',
+    rarity: 'uncommon',
+    gelPerSec: 3,
+    hatchWeight: 30,
+    hatchEnergyCost: 100,
+    bgColor: '#f5c8d8',
+  },
+  {
+    id: 'slime_blue',
+    name: 'ブルースライム',
+    emoji: '🔵',
+    imagePath: 'images/slime_blue.png',
+    description: '水辺に住む知性派スライム。冷静沈着で判断が速い。ゲルの生産量も優秀。',
+    rarity: 'uncommon',
+    gelPerSec: 5,
+    hatchWeight: 20,
+    hatchEnergyCost: 100,
+    bgColor: '#a8c8f8',
+  },
+  {
+    id: 'slime_gold',
+    name: 'ゴールドスライム',
+    emoji: '✨',
+    imagePath: 'images/slime_gold.png',
+    description: '伝説のスライム。その体は純金のように輝き、触れるものすべてをゲルに変えるとも言われる。',
+    rarity: 'rare',
+    gelPerSec: 20,
+    hatchWeight: 5,
+    hatchEnergyCost: 100,
+    bgColor: '#f8e080',
+  },
+];
+
+// 図鑑はすべてのモンスターを最初から表示(未発見はロック表示)
+const RARITY_COLOR = {
+  common: '#a0c890',
+  uncommon: '#90b0e0',
+  rare: '#e0c050',
+  legendary: '#e090d0',
+};
+const RARITY_LABEL = {
+  common: 'コモン',
+  uncommon: 'アンコモン',
+  rare: 'レア',
+  legendary: 'レジェンド',
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+function createInitialState() {
+  return {
+    version: 1,
+    gel: 0,
+    totalGelEarned: 0,
+    energy: 0,
+    maxEnergy: 100,
+    energyPerClick: 10,
+    totalClicks: 0,
+    totalHatches: 0,
+    // { [monsterId]: count }
+    monsters: {},
+    playTimeSeconds: 0,
+    lastSaveTimestamp: Date.now(),
+    lastTickTimestamp: Date.now(),
+  };
+}
+
+let state = createInitialState();
+
+/* ============================================================
+   PERSISTENCE
+   ============================================================ */
+const SAVE_KEY = 'monsterHatchClicker_v1';
+
+function saveGame() {
+  state.lastSaveTimestamp = Date.now();
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    showOfflineNotice('💾 セーブしました！');
+  } catch(e) {
+    console.error('Save failed', e);
+  }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    state = Object.assign(createInitialState(), saved);
+    return true;
+  } catch(e) {
+    console.error('Load failed', e);
+    return false;
+  }
+}
+
+function resetGame() {
+  if (!confirm('本当にリセットしますか？すべてのデータが消えます。')) return;
+  localStorage.removeItem(SAVE_KEY);
+  state = createInitialState();
+  renderAll();
+  showOfflineNotice('🗑️ リセットしました');
+}
+
+function exportSave() {
+  const data = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  const ta = document.createElement('textarea');
+  ta.value = data;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  showOfflineNotice('📤 クリップボードにコピーしました');
+}
+
+function importSave() {
+  const data = prompt('セーブデータを貼り付けてください:');
+  if (!data) return;
+  try {
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(data))));
+    state = Object.assign(createInitialState(), parsed);
+    renderAll();
+    showOfflineNotice('📥 インポート成功！');
+  } catch(e) {
+    alert('セーブデータが正しくありません。');
+  }
+}
+
+/* ============================================================
+   GAME LOGIC
+   ============================================================ */
+
+/** ゲルの毎秒収入を計算 */
+function calcGelPerSec() {
+  let gps = 0;
+  for (const [id, count] of Object.entries(state.monsters)) {
+    const def = MONSTER_DEFS.find(m => m.id === id);
+    if (def) gps += def.gelPerSec * count;
+  }
+  return gps;
+}
+
+/** モンスター総数 */
+function calcTotalMonsters() {
+  return Object.values(state.monsters).reduce((a, b) => a + b, 0);
+}
+
+/** 卵クリック処理 */
+function handleEggClick(event) {
+  state.energy = Math.min(state.energy + state.energyPerClick, state.maxEnergy);
+  state.totalClicks++;
+
+  // フロートテキスト
+  spawnFloatText(`+${state.energyPerClick}⚡`, event);
+
+  // 卵を揺らす
+  const eggWrap = document.getElementById('egg-wrap');
+  eggWrap.classList.remove('shaking');
+  void eggWrap.offsetWidth; // reflow
+  eggWrap.classList.add('shaking');
+
+  updateCracks();
+  updateEnergyBar();
+  updateHeaderStats();
+  updateStatusTab();
+
+  // 孵化判定
+  if (state.energy >= state.maxEnergy) {
+    hatchMonster();
+  }
+}
+
+/** 孵化処理 */
+function hatchMonster() {
+  state.energy = 0;
+  state.totalHatches++;
+
+  const monster = pickMonster();
+  if (!monster) return;
+
+  state.monsters[monster.id] = (state.monsters[monster.id] || 0) + 1;
+
+  updateCracks(); // reset cracks
+  updateEnergyBar();
+  renderMonstersGrid();
+  renderZukan();
+  updateStatusTab();
+
+  showHatchOverlay(monster);
+}
+
+/** 重み付きランダムでモンスター選択 */
+function pickMonster() {
+  const total = MONSTER_DEFS.reduce((a, m) => a + m.hatchWeight, 0);
+  let r = Math.random() * total;
+  for (const m of MONSTER_DEFS) {
+    r -= m.hatchWeight;
+    if (r <= 0) return m;
+  }
+  return MONSTER_DEFS[0];
+}
+
+/** ゲームループ（1秒ごと） */
+let lastTick = Date.now();
+function gameTick() {
+  const now = Date.now();
+  const delta = (now - lastTick) / 1000;
+  lastTick = now;
+
+  const gps = calcGelPerSec();
+  const earned = gps * delta;
+
+  state.gel += earned;
+  state.totalGelEarned += earned;
+  state.playTimeSeconds += delta;
+
+  updateHeaderStats();
+
+  // 部分的な更新のみ（重い描画は避ける）
+  document.getElementById('stat-gel').textContent = formatNum(state.gel);
+  document.getElementById('stat-total-gel').textContent = formatNum(state.totalGelEarned);
+  document.getElementById('stat-gps').textContent = formatNum(gps);
+  document.getElementById('stat-playtime').textContent = formatTime(state.playTimeSeconds);
+  document.getElementById('hdr-gel').textContent = formatNum(Math.floor(state.gel));
+  document.getElementById('hdr-gps').textContent = formatNum(gps) + '/s';
+}
+
+/** 放置収入（オフライン精算） */
+function processOfflineIncome() {
+  const now = Date.now();
+  const offlineSec = Math.max(0, (now - state.lastSaveTimestamp) / 1000);
+  if (offlineSec < 5) return;
+
+  const gps = calcGelPerSec();
+  const earned = gps * offlineSec;
+  if (earned < 0.01) return;
+
+  state.gel += earned;
+  state.totalGelEarned += earned;
+
+  const minutes = Math.floor(offlineSec / 60);
+  showOfflineNotice(`⏰ ${minutes}分放置 → +${formatNum(earned)} ゲル獲得！`);
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+
+function renderAll() {
+  updateEnergyBar();
+  updateCracks();
+  renderMonstersGrid();
+  renderZukan();
+  updateStatusTab();
+  updateHeaderStats();
+}
+
+function updateHeaderStats() {
+  const gps = calcGelPerSec();
+  document.getElementById('hdr-gel').textContent = formatNum(Math.floor(state.gel));
+  document.getElementById('hdr-gps').textContent = formatNum(gps) + '/s';
+}
+
+function updateEnergyBar() {
+  const pct = (state.energy / state.maxEnergy) * 100;
+  document.getElementById('energy-bar').style.width = pct + '%';
+  document.getElementById('energy-label').textContent =
+    `エネルギー: ${Math.floor(state.energy)} / ${state.maxEnergy}`;
+  document.getElementById('stat-energy').textContent = Math.floor(state.energy);
+  document.getElementById('stat-max-energy').textContent = state.maxEnergy;
+
+  // glow when almost full
+  const eggWrap = document.getElementById('egg-wrap');
+  if (pct >= 80) {
+    eggWrap.classList.add('glowing');
+  } else {
+    eggWrap.classList.remove('glowing');
+  }
+}
+
+function updateCracks() {
+  const pct = state.energy / state.maxEnergy;
+  const cracks = document.querySelectorAll('.crack');
+  // 4 cracks appear at 25%, 50%, 75%, 100%
+  cracks.forEach((c, i) => {
+    c.classList.toggle('visible', pct >= (i + 1) * 0.25);
+  });
+}
+
+function renderMonstersGrid() {
+  const grid = document.getElementById('monsters-grid');
+  const entries = Object.entries(state.monsters).filter(([, c]) => c > 0);
+
+  if (entries.length === 0) {
+    grid.innerHTML = '<div class="empty-monsters">まだモンスターがいません</div>';
+    return;
+  }
+
+  grid.innerHTML = '';
+  for (const [id, count] of entries) {
+    const def = MONSTER_DEFS.find(m => m.id === id);
+    if (!def) continue;
+
+    const card = document.createElement('div');
+    card.className = 'monster-card';
+    card.innerHTML = `
+      <div class="monster-count">×${count}</div>
+      <div class="monster-img-wrap" style="background:${def.bgColor}">
+        ${buildMonsterImgTag(def)}
+      </div>
+      <div class="monster-name">${def.name}</div>
+      <div class="monster-income">+${def.gelPerSec}/s</div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+function renderZukan() {
+  const list = document.getElementById('zukan-list');
+  list.innerHTML = '';
+
+  for (const def of MONSTER_DEFS) {
+    const count = state.monsters[def.id] || 0;
+    const discovered = count > 0;
+
+    const entry = document.createElement('div');
+    entry.className = 'zukan-entry' + (discovered ? '' : ' undiscovered');
+
+    entry.innerHTML = `
+      <div class="zukan-img ${discovered ? '' : 'locked'}" style="background:${def.bgColor}">
+        ${discovered ? buildMonsterImgTag(def) : '❓'}
+      </div>
+      <div class="zukan-info">
+        <div class="zukan-name">
+          ${discovered ? def.name : '???'}
+          <span style="font-size:0.65rem;color:${RARITY_COLOR[def.rarity]};margin-left:6px;">
+            ${RARITY_LABEL[def.rarity]}
+          </span>
+        </div>
+        <div class="zukan-desc">
+          ${discovered ? def.description : 'まだ発見されていません。卵を孵化させて図鑑を埋めよう！'}
+        </div>
+        ${discovered ? `<div class="zukan-desc" style="margin-top:4px;">💧 +${def.gelPerSec}/秒</div>` : ''}
+      </div>
+      ${discovered ? `<div class="zukan-count-badge">×${count}</div>` : ''}
+    `;
+    list.appendChild(entry);
+  }
+}
+
+function updateStatusTab() {
+  document.getElementById('stat-gel').textContent = formatNum(state.gel);
+  document.getElementById('stat-total-gel').textContent = formatNum(state.totalGelEarned);
+  document.getElementById('stat-gps').textContent = formatNum(calcGelPerSec());
+  document.getElementById('stat-monsters').textContent = calcTotalMonsters();
+  document.getElementById('stat-species').textContent = Object.keys(state.monsters).length;
+  document.getElementById('stat-hatches').textContent = state.totalHatches;
+  document.getElementById('stat-clicks').textContent = state.totalClicks;
+  document.getElementById('stat-energy').textContent = Math.floor(state.energy);
+  document.getElementById('stat-max-energy').textContent = state.maxEnergy;
+  document.getElementById('stat-playtime').textContent = formatTime(state.playTimeSeconds);
+}
+
+/** モンスター画像タグ：画像がなければ絵文字プレースホルダー */
+function buildMonsterImgTag(def) {
+  // 画像エラー時に絵文字フォールバック
+  return `<img src="${def.imagePath}" alt="${def.name}"
+    onerror="this.style.display='none';this.nextElementSibling.style.display='block';"
+    style="width:100%;height:100%;object-fit:cover;">
+  <span style="display:none;font-size:1.8rem;">${def.emoji}</span>`;
+}
+
+/* ============================================================
+   HATCH OVERLAY
+   ============================================================ */
+function showHatchOverlay(monster) {
+  const overlay = document.getElementById('hatch-overlay');
+  const imgEl = document.getElementById('hatch-monster-img');
+  const titleEl = document.getElementById('hatch-title');
+  const descEl = document.getElementById('hatch-desc');
+
+  imgEl.style.background = monster.bgColor;
+  imgEl.innerHTML = buildMonsterImgTag(monster);
+  titleEl.textContent = `✨ ${monster.name} 誕生！`;
+  descEl.textContent = monster.description;
+
+  overlay.classList.add('visible');
+}
+
+document.getElementById('hatch-ok').addEventListener('click', () => {
+  document.getElementById('hatch-overlay').classList.remove('visible');
+});
+
+/* ============================================================
+   FLOAT TEXT
+   ============================================================ */
+function spawnFloatText(text, event) {
+  const el = document.createElement('div');
+  el.className = 'float-text';
+  el.textContent = text;
+
+  let x, y;
+  if (event && event.touches && event.touches.length > 0) {
+    x = event.touches[0].clientX;
+    y = event.touches[0].clientY;
+  } else if (event) {
+    x = event.clientX;
+    y = event.clientY;
+  } else {
+    const rect = document.getElementById('egg-wrap').getBoundingClientRect();
+    x = rect.left + rect.width / 2;
+    y = rect.top;
+  }
+
+  el.style.left = (x - 20) + 'px';
+  el.style.top = (y - 10) + 'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+/* ============================================================
+   OFFLINE NOTICE
+   ============================================================ */
+let offlineTimer = null;
+function showOfflineNotice(msg) {
+  const el = document.getElementById('offline-notice');
+  el.textContent = msg;
+  el.classList.add('visible');
+  clearTimeout(offlineTimer);
+  offlineTimer = setTimeout(() => el.classList.remove('visible'), 2800);
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+function formatNum(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return Math.floor(n).toString();
+}
+function formatTime(sec) {
+  sec = Math.floor(sec);
+  if (sec < 60) return sec + '秒';
+  if (sec < 3600) return Math.floor(sec / 60) + '分' + (sec % 60) + '秒';
+  return Math.floor(sec / 3600) + '時間' + Math.floor((sec % 3600) / 60) + '分';
+}
+
+/* ============================================================
+   EVENT LISTENERS
+   ============================================================ */
+const eggWrap = document.getElementById('egg-wrap');
+eggWrap.addEventListener('click', handleEggClick);
+eggWrap.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') handleEggClick(e); });
+
+document.getElementById('btn-save').addEventListener('click', saveGame);
+document.getElementById('btn-export').addEventListener('click', exportSave);
+document.getElementById('btn-import').addEventListener('click', importSave);
+document.getElementById('btn-reset').addEventListener('click', resetGame);
+
+/* ============================================================
+   INIT
+   ============================================================ */
+(function init() {
+  const loaded = loadGame();
+  if (loaded) {
+    processOfflineIncome();
+    showOfflineNotice('✅ セーブデータを読み込みました');
+  }
+
+  lastTick = Date.now();
+  renderAll();
+
+  // ゲームループ
+  setInterval(gameTick, 200); // 200msごとに収入計算
+
+  // 自動セーブ（30秒ごと）
+  setInterval(() => {
+    state.lastSaveTimestamp = Date.now();
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e) {}
+  }, 30000);
+})();
+</script>
+</body>
+</html>
