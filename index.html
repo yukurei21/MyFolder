@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>活動記録ダッシュボード レイコード</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ==========================================
+           【デザイン設定】
+        ========================================== */
+        :root {
+            --bg-base: #f7f6f2;          /* 優しいベージュ */
+            --card-white: #ffffff;
+            --text-main: #5a5a5a;
+            --text-sub: #a0a0a0;
+            --accent-soft: #b8c6a3;      /* セージグリーン */
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            margin: 0;
+            padding: env(safe-area-inset-top) 16px 40px;
+            line-height: 1.6;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ヘッダー・タイトル */
+        .app-title {
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 15px 0 5px;
+            color: var(--text-main);
+            letter-spacing: 0.1em;
+        }
+
+        .total-card {
+            background: var(--card-white);
+            border-radius: var(--radius-lg);
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        
+        .total-value { 
+            font-size: 2.4rem; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            display: block;
+            line-height: 1.2;
+        }
+
+        .unit-toggle {
+            display: flex; justify-content: center; gap: 8px; margin-top: 15px;
+        }
+        .unit-btn {
+            background: #eee; border: none; padding: 6px 14px; border-radius: 20px;
+            font-size: 0.75rem; color: var(--text-sub); cursor: pointer;
+            font-family: inherit; transition: 0.2s;
+        }
+        .unit-btn.active { background: var(--text-main); color: #fff; }
+
+        /* 項目選択グリッド */
+        .item-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;
+        }
+        .item-tile {
+            background: var(--card-white); border-radius: var(--radius-md); padding: 15px 5px;
+            text-align: center; font-size: 0.85rem; font-weight: 700; border: 2px solid transparent;
+            transition: all 0.2s; box-shadow: var(--shadow);
+        }
+        .item-tile.active { transform: scale(0.96); }
+
+        .card {
+            background: var(--card-white); border-radius: var(--radius-lg); padding: 20px;
+            margin-bottom: 20px; box-shadow: var(--shadow);
+        }
+
+        /* 操作パネル */
+        .slider-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+        #target-label { font-weight: 700; color: var(--text-main); }
+        #range-val { font-size: 1.6rem; font-weight: 700; }
+
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent; margin: 20px 0;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            height: 8px; background: #f0f0f0; border-radius: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 30px; width: 30px; border-radius: 50%;
+            background: #fff; border: 3px solid var(--text-main); margin-top: -11px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .save-btn {
+            width: 100%; padding: 16px; border-radius: var(--radius-md); border: none;
+            background: var(--text-main); color: white; font-size: 1rem; font-weight: 700;
+            font-family: inherit; cursor: pointer;
+        }
+
+        /* 統計タブ */
+        .tab-box {
+            display: flex; background: #f0f0f0; border-radius: 12px; padding: 4px; margin-bottom: 15px;
+        }
+        .tab {
+            flex: 1; text-align: center; padding: 8px; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 700; color: var(--text-sub); cursor: pointer;
+        }
+        .tab.active { background: #fff; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+        canvas { width: 100%; height: auto; }
+
+        /* モーダル */
+        #modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(6px); z-index: 1000; padding: 20px;
+        }
+        .modal-body {
+            background: #fff; padding: 24px; border-radius: var(--radius-lg); max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .item-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    </style>
+</head>
+<body>
+
+    <div class="app-title">RayCode</div>
+
+    <div class="header">
+        <div class="total-card">
+            <span style="font-size: 0.85rem; color: var(--text-sub); font-weight: 700;">TOTAL ACTIVITY</span>
+            <span class="total-value" id="display-total">0</span>
+            <div class="unit-toggle">
+                <button class="unit-btn active" onclick="setUnit('min', this)">分</button>
+                <button class="unit-btn" onclick="setUnit('hour', this)">時間</button>
+                <button class="unit-btn" onclick="setUnit('day', this)">日</button>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 5px 12px;">
+        <span style="font-weight: 700; font-size: 0.95rem;">項目を選択</span>
+        <button onclick="toggleModal(true)" style="background:none; border:none; color:var(--text-sub); font-size: 0.8rem; font-weight: 700;">編集</button>
+    </div>
+
+    <div class="item-grid" id="item-grid"></div>
+
+    <div class="card">
+        <div class="slider-header">
+            <span id="target-label">項目を選択してください</span>
+            <span id="range-val">0<small style="font-size: 0.9rem; margin-left:2px;">分</small></span>
+        </div>
+        <input type="range" id="slider" min="0" max="180" step="5" value="0" oninput="onSliderChange()">
+        <button class="save-btn" onclick="saveData()">記録を保存</button>
+    </div>
+
+    <div class="card">
+        <span style="font-weight: 700; display: block; margin-bottom: 20px; font-size: 0.95rem;">今日の分布</span>
+        <div style="aspect-ratio: 1/1; max-width: 240px; margin: 0 auto;">
+            <canvas id="donutChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="tab-box">
+            <div class="tab active" onclick="switchTab('day', this)">日</div>
+            <div class="tab" onclick="switchTab('week', this)">週</div>
+            <div class="tab" onclick="switchTab('month', this)">月</div>
+            <div class="tab" onclick="switchTab('year', this)">年</div>
+        </div>
+        <div style="aspect-ratio: 1.6/1;">
+            <canvas id="barChart"></canvas>
+        </div>
+    </div>
+
+    <div id="modal">
+        <div class="modal-body">
+            <div class="modal-header">
+                <h3 style="margin:0">項目設定</h3>
+                <button onclick="toggleModal(false)" style="background:none; border:none; font-size:1.2rem; color:var(--text-sub);">✕</button>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <input type="text" id="new-item-input" placeholder="新しい項目名" style="flex:1; padding:12px; border:1px solid #ddd; border-radius:10px; font-family:inherit;">
+                <button onclick="addItem()" style="background:var(--accent-soft); color:#fff; border:none; padding:0 20px; border-radius:10px; font-weight:700;">追加</button>
+            </div>
+            <div id="edit-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 【システム設定】
+        // ==========================================
+        const SETTINGS = {
+            storageKey: "raycode_v1_records",
+            itemKey: "raycode_v1_items",
+            defaultItems: ["勉強", "絵", "筋トレ", "編集", "読書"],
+            // パステルパレット
+            colors: ["#b8c6a3", "#9bb7d4", "#e5989b", "#d4c8a5", "#b3a5d4", "#f5cac3", "#82c1cf", "#e9edc9"]
+        };
+
+        let state = {
+            items: [],
+            records: {}, 
+            selectedItem: null,
+            totalUnit: 'min',
+            currentTab: 'day'
+        };
+
+        // ==========================================
+        // 【コア・ロジック】
+        // ==========================================
+        function init() {
+            const savedItems = localStorage.getItem(SETTINGS.itemKey);
+            state.items = savedItems ? JSON.parse(savedItems) : [...SETTINGS.defaultItems];
+            const savedRecords = localStorage.getItem(SETTINGS.storageKey);
+            state.records = savedRecords ? JSON.parse(savedRecords) : {};
+
+            renderItemGrid();
+            refreshCharts();
+            updateTotalDisplay();
+        }
+
+        function saveData() {
+            if (!state.selectedItem) return alert("項目を選択してください");
+            const min = parseInt(document.getElementById('slider').value);
+            if (min === 0) return;
+
+            const today = new Date().toLocaleDateString('en-CA');
+            if (!state.records[today]) state.records[today] = {};
+            state.records[today][state.selectedItem] = (state.records[today][state.selectedItem] || 0) + min;
+
+            localStorage.setItem(SETTINGS.storageKey, JSON.stringify(state.records));
+            
+            document.getElementById('slider').value = 0;
+            onSliderChange();
+            refreshCharts();
+            updateTotalDisplay();
+        }
+
+        // ==========================================
+        // 【表示・計算】
+        // ==========================================
+        function setUnit(unit, el) {
+            state.totalUnit = unit;
+            document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            updateTotalDisplay();
+        }
+
+        function updateTotalDisplay() {
+            let totalMin = 0;
+            Object.values(state.records).forEach(day => {
+                Object.values(day).forEach(m => totalMin += m);
+            });
+
+            const valEl = document.getElementById('display-total');
+            if (state.totalUnit === 'min') {
+                valEl.innerHTML = `${totalMin.toLocaleString()}<small style="font-size:1.2rem; margin-left:4px">分</small>`;
+            } else if (state.totalUnit === 'hour') {
+                const h = Math.floor(totalMin / 60);
+                const m = totalMin % 60;
+                valEl.innerHTML = `${h}<small style="font-size:1.2rem">時間</small>${m}<small style="font-size:1.2rem">分</small>`;
+            } else {
+                const d = (totalMin / 1440).toFixed(1);
+                valEl.innerHTML = `${d}<small style="font-size:1.2rem">日</small>`;
+            }
+        }
+
+        // ==========================================
+        // 【UI描画】
+        // ==========================================
+        function renderItemGrid() {
+            const container = document.getElementById('item-grid');
+            container.innerHTML = state.items.map((name, i) => {
+                const color = SETTINGS.colors[i % SETTINGS.colors.length];
+                return `<div class="item-tile" id="tile-${name}" onclick="selectItem('${name}')" 
+                        style="background: ${color}15; color: ${color};">${name}</div>`;
+            }).join('');
+            if (state.selectedItem) selectItem(state.selectedItem);
+        }
+
+        function selectItem(name) {
+            state.selectedItem = name;
+            document.getElementById('target-label').innerText = name;
+            document.querySelectorAll('.item-tile').forEach(t => {
+                t.classList.remove('active');
+                t.style.borderColor = 'transparent';
+                t.style.boxShadow = 'var(--shadow)';
+            });
+            const activeTile = document.getElementById(`tile-${name}`);
+            if(activeTile) {
+                const color = SETTINGS.colors[state.items.indexOf(name) % SETTINGS.colors.length];
+                activeTile.classList.add('active');
+                activeTile.style.borderColor = color;
+                activeTile.style.boxShadow = `0 4px 15px ${color}33`;
+                activeTile.style.background = `${color}25`;
+            }
+        }
+
+        function onSliderChange() {
+            const val = document.getElementById('slider').value;
+            document.getElementById('range-val').innerHTML = `${val}<small style="font-size: 0.9rem; margin-left:2px;">分</small>`;
+        }
+
+        // ==========================================
+        // 【グラフ: Canvas】
+        // ==========================================
+        function refreshCharts() { drawDonut(); drawBar(); }
+
+        function drawDonut() {
+            const canvas = document.getElementById('donutChart');
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const size = canvas.parentElement.clientWidth;
+            canvas.width = size * dpr; canvas.height = size * dpr;
+            ctx.scale(dpr, dpr);
+
+            const today = new Date().toLocaleDateString('en-CA');
+            const data = state.records[today] || {};
+            const entries = Object.entries(data);
+            const total = entries.reduce((s, [k, v]) => s + v, 0);
+
+            ctx.clearRect(0,0,size,size);
+            const cx = size/2, cy = size/2, r = size/2 - 10;
+
+            if (total === 0) {
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+                ctx.fillStyle = "#f8f8f8"; ctx.fill();
+                return;
+            }
+
+            let start = -Math.PI/2;
+            entries.forEach(([name, val]) => {
+                const slice = (val / total) * Math.PI * 2;
+                const idx = state.items.indexOf(name);
+                ctx.fillStyle = SETTINGS.colors[idx % SETTINGS.colors.length] || "#ddd";
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, start, start + slice); ctx.fill();
+                start += slice;
+            });
+            ctx.beginPath(); ctx.arc(cx, cy, r*0.65, 0, Math.PI*2); ctx.fillStyle = "#fff"; ctx.fill();
+        }
+
+        function drawBar() {
+            const canvas = document.getElementById('barChart');
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.parentElement.clientWidth;
+            const h = canvas.parentElement.clientHeight;
+            canvas.width = w * dpr; canvas.height = h * dpr;
+            ctx.scale(dpr, dpr);
+
+            const stats = getChartData();
+            const max = Math.max(...stats.values, 60);
+            const padX = 35, padY = 25;
+            const graphW = w - padX * 2;
+            const graphH = h - padY * 2;
+            const step = graphW / stats.values.length;
+
+            ctx.clearRect(0,0,w,h);
+            stats.values.forEach((v, i) => {
+                const barW = step * 0.6;
+                const x = padX + i * step + (step - barW)/2;
+                const barH = (v / max) * graphH;
+                
+                ctx.fillStyle = "#d0d0d0";
+                if(ctx.roundRect) ctx.roundRect(x, h-padY-barH, barW, barH, 6);
+                else ctx.fillRect(x, h-padY-barH, barW, barH);
+                ctx.fill();
+
+                ctx.fillStyle = varColor('--text-sub');
+                ctx.font = "bold 10px 'Noto Sans JP'";
+                ctx.textAlign = "center";
+                ctx.fillText(stats.labels[i], x + barW/2, h - 8);
+                if(v > 0) ctx.fillText(v, x + barW/2, h - padY - barH - 6);
+            });
+        }
+
+        function getChartData() {
+            const labels = []; const values = []; const now = new Date();
+            if (state.currentTab === 'day') {
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date(); d.setDate(now.getDate() - i);
+                    labels.push(`${d.getDate()}日`);
+                    values.push(Object.values(state.records[d.toLocaleDateString('en-CA')] || {}).reduce((a,b)=>a+b,0));
+                }
+            } else if (state.currentTab === 'week') {
+                for (let i = 3; i >= 0; i--) {
+                    labels.push(i === 0 ? "今週" : `${i}週前`);
+                    let v = 0; // 簡易：直近28日を4分割
+                    for(let j=0; j<7; j++) {
+                        const d = new Date(); d.setDate(now.getDate() - (i*7 + j));
+                        v += Object.values(state.records[d.toLocaleDateString('en-CA')] || {}).reduce((a,b)=>a+b,0);
+                    }
+                    values.push(v);
+                }
+            } else if (state.currentTab === 'month') {
+                for (let i = 5; i >= 0; i--) {
+                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    labels.push(`${d.getMonth()+1}月`);
+                    let v = 0;
+                    Object.keys(state.records).forEach(k => {
+                        const rd = new Date(k);
+                        if(rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear()) v += Object.values(state.records[k]).reduce((a,b)=>a+b,0);
+                    });
+                    values.push(v);
+                }
+            } else {
+                const year = now.getFullYear();
+                for (let i = 2; i >= 0; i--) {
+                    labels.push(`${year-i}年`);
+                    let v = 0;
+                    Object.keys(state.records).forEach(k => { if(k.startsWith(year-i)) v += Object.values(state.records[k]).reduce((a,b)=>a+b,0); });
+                    values.push(v);
+                }
+            }
+            return { labels, values };
+        }
+
+        function switchTab(type, el) {
+            state.currentTab = type;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            drawBar();
+        }
+
+        // ==========================================
+        // 【その他ユーティリティ】
+        // ==========================================
+        function toggleModal(s) { document.getElementById('modal').style.display = s ? 'block' : 'none'; if(s) renderEditList(); }
+        function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+        function renderEditList() {
+            const container = document.getElementById('edit-list');
+            container.innerHTML = state.items.map((name, i) => `
+                <div class="item-row">
+                    <span>${name}</span>
+                    <button onclick="deleteItem(${i})" style="color:#e5989b; border:none; background:none; font-weight:700;">削除</button>
+                </div>
+            `).join('');
+        }
+
+        function addItem() {
+            const input = document.getElementById('new-item-input');
+            const val = input.value.trim();
+            if(val && !state.items.includes(val)){
+                state.items.push(val);
+                input.value = "";
+                localStorage.setItem(SETTINGS.itemKey, JSON.stringify(state.items));
+                renderItemGrid(); renderEditList();
+            }
+        }
+
+        function deleteItem(i) {
+            if(confirm("この項目を一覧から削除しますか？（過去の記録は保持されます）")) {
+                state.items.splice(i, 1);
+                localStorage.setItem(SETTINGS.itemKey, JSON.stringify(state.items));
+                renderItemGrid(); renderEditList();
+            }
+        }
+
+        window.addEventListener('resize', refreshCharts);
+        init();
+    </script>
+</body>
+</html>
