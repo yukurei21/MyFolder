@@ -3,684 +3,1531 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>霧雨魔法キノコ園</title>
+<title>霧雨魔法キノコ園 v2</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#1a1208;
+  --panel-bg:#221810;
+  --border:#6b4226;
+  --border-light:#a0623a;
+  --cream:#f5e6c8;
+  --gold:#d4a017;
+  --green:#4a7c2f;
+  --green-light:#7ab648;
+  --brown:#3d2b1f;
+  --brown-mid:#5c3d2e;
+  --red:#c0392b;
+  --blue:#2980b9;
+  --shadow:rgba(0,0,0,0.7);
+}
+body{
+  background:var(--bg);
+  font-family:'Courier New',monospace;
+  color:var(--cream);
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  user-select:none;
+}
 
-  :root {
-    --brown-dark: #3d2b1f;
-    --brown-mid: #6b4226;
-    --brown-light: #a0623a;
-    --green-dark: #2d4a1e;
-    --green-mid: #4a7c2f;
-    --green-light: #7ab648;
-    --cream: #f5e6c8;
-    --gold: #d4a017;
-    --wood: #8b5e3c;
-    --fog: rgba(200,220,255,0.3);
-  }
+/* ===== HEADER ===== */
+#header{
+  background:linear-gradient(180deg,#0d0800,var(--panel-bg));
+  border-bottom:2px solid var(--border);
+  padding:5px 8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-shrink:0;
+  position:relative;
+  z-index:20;
+}
+#header::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  animation:shimmer 2.5s infinite;
+}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.hdr-stat{display:flex;flex-direction:column;align-items:center;min-width:60px;}
+.hdr-label{font-size:8px;color:#8a7060;text-transform:uppercase;}
+.hdr-value{font-size:14px;font-weight:bold;color:var(--gold);}
+.hdr-value.green{color:var(--green-light);}
+.hdr-value.blue{color:#64b3e8;}
+#title-badge{font-size:11px;font-weight:bold;color:var(--gold);text-shadow:0 0 6px rgba(212,160,23,.6);}
 
-  body {
-    background: var(--brown-dark);
-    font-family: 'Courier New', monospace;
-    color: var(--cream);
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    user-select: none;
-  }
+/* ===== ISO VIEWPORT ===== */
+#iso-viewport{
+  flex:1;
+  overflow:hidden;
+  position:relative;
+  background:
+    radial-gradient(ellipse at 40% 30%,rgba(74,124,47,.1) 0%,transparent 60%),
+    var(--bg);
+  cursor:default;
+}
+#iso-scroll{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  touch-action:none;
+}
+#iso-stage{
+  position:absolute;
+  top:50%;left:50%;
+  transform-origin:50% 50%;
+}
 
-  /* ========== HEADER ========== */
-  #header {
-    background: linear-gradient(180deg, #1a0f08 0%, var(--brown-dark) 100%);
-    border-bottom: 3px solid var(--brown-light);
-    padding: 6px 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-    position: relative;
-    overflow: hidden;
-  }
-  #header::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    animation: shimmer 2s infinite;
-  }
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-  .header-left { display: flex; align-items: center; gap: 6px; }
-  .header-right { display: flex; align-items: center; gap: 8px; font-size: 11px; }
-  #money-display {
-    font-size: 18px;
-    font-weight: bold;
-    color: var(--gold);
-    text-shadow: 0 0 8px rgba(212,160,23,0.6);
-    animation: pulse-gold 1.5s ease-in-out infinite;
-  }
-  @keyframes pulse-gold {
-    0%,100% { text-shadow: 0 0 8px rgba(212,160,23,0.6); }
-    50% { text-shadow: 0 0 16px rgba(212,160,23,1); }
-  }
-  #money-delta {
-    font-size: 11px;
-    color: #7ab648;
-    min-width: 40px;
-  }
-  #weather-display {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid var(--brown-light);
-    border-radius: 8px;
-    padding: 3px 8px;
-    font-size: 11px;
-    text-align: center;
-  }
-  #date-display {
-    font-size: 11px;
-    color: #c4a882;
-  }
+/* ===== ISO TILE ===== */
+.iso-tile{
+  position:absolute;
+  transform-origin:50% 100%;
+  transition:filter .15s;
+  cursor:pointer;
+}
+.iso-tile:hover .tile-top{filter:brightness(1.3);}
+.tile-top,.tile-left,.tile-right{position:absolute;pointer-events:none;}
+.tile-top{
+  width:var(--tw);height:var(--th);
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);
+}
+.tile-left{
+  width:calc(var(--tw)/2);
+  height:var(--th);
+  clip-path:polygon(0% 0%,100% 0%,100% 100%,0% 100%);
+  top:calc(var(--th)/2);
+  left:0;
+}
+.tile-right{
+  width:calc(var(--tw)/2);
+  height:var(--th);
+  clip-path:polygon(0% 0%,100% 0%,100% 100%,0% 100%);
+  top:calc(var(--th)/2);
+  left:calc(var(--tw)/2);
+}
 
-  /* ========== MAIN AREA ========== */
-  #main-area {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-    background:
-      radial-gradient(ellipse at 30% 40%, rgba(74,124,47,0.15) 0%, transparent 60%),
-      radial-gradient(ellipse at 70% 70%, rgba(61,43,31,0.3) 0%, transparent 50%),
-      var(--brown-dark);
-  }
+/* ===== BUILDING SPRITES ===== */
+.bld-sprite{
+  position:absolute;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  pointer-events:none;
+  transform:translateX(-50%);
+}
+.bld-body{
+  background:linear-gradient(180deg,#4a3828,#2d1f10);
+  border:1px solid var(--border-light);
+  border-radius:3px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  position:relative;
+}
+.bld-roof{
+  width:0;height:0;
+  border-left:solid transparent;
+  border-right:solid transparent;
+  border-bottom:solid #6b4226;
+}
+.bld-label{
+  font-size:7px;color:var(--cream);
+  background:rgba(0,0,0,.6);
+  padding:1px 3px;border-radius:2px;
+  white-space:nowrap;margin-top:1px;
+}
+.bld-progress{
+  width:30px;height:3px;
+  background:rgba(0,0,0,.5);
+  border-radius:2px;overflow:hidden;
+  margin-top:1px;
+}
+.bld-progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--green),var(--green-light));
+  transition:width .3s;
+}
+.bld-combo{
+  position:absolute;
+  top:-10px;right:-8px;
+  background:var(--gold);color:var(--brown);
+  font-size:7px;font-weight:bold;
+  padding:1px 3px;border-radius:3px;
+  white-space:nowrap;
+  animation:combo-pop .3s ease-out;
+}
+@keyframes combo-pop{
+  0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}
+}
 
-  #fog-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 10;
-    opacity: 0;
-    background: radial-gradient(ellipse at center, rgba(200,220,255,0.5) 0%, rgba(180,200,255,0.2) 100%);
-    transition: opacity 1s;
-  }
-  #fog-overlay.active { opacity: 1; animation: fog-pulse 3s ease-in-out infinite; }
-  @keyframes fog-pulse {
-    0%,100% { opacity: 0.7; }
-    50% { opacity: 1; }
-  }
+/* ===== CHARACTER ===== */
+.character{
+  position:absolute;
+  display:flex;flex-direction:column;
+  align-items:center;
+  pointer-events:none;
+  transition:left .4s linear,top .4s linear;
+  z-index:5;
+}
+.char-body{
+  width:16px;height:20px;
+  border-radius:3px 3px 0 0;
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+}
+.char-hat{font-size:14px;line-height:1;}
+.char-carry{
+  position:absolute;
+  top:-10px;right:-6px;
+  font-size:11px;
+  animation:carry-bob .5s ease-in-out infinite alternate;
+}
+@keyframes carry-bob{0%{transform:translateY(0)}100%{transform:translateY(-2px)}}
+.char-shadow{
+  width:12px;height:4px;
+  background:rgba(0,0,0,.4);
+  border-radius:50%;
+  margin-top:1px;
+}
+.char-status{
+  font-size:7px;
+  background:rgba(0,0,0,.7);
+  padding:1px 3px;border-radius:2px;
+  white-space:nowrap;
+  margin-top:1px;
+}
 
-  #spark-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 11;
-    opacity: 0;
-    background: radial-gradient(ellipse at center, rgba(255,200,50,0.8) 0%, rgba(255,100,0,0.3) 50%, transparent 70%);
-    transition: opacity 0.3s;
-  }
-  #spark-overlay.active { animation: spark-blast 1.5s forwards; }
-  @keyframes spark-blast {
-    0% { opacity: 0; }
-    10% { opacity: 1; }
-    100% { opacity: 0; }
-  }
+/* ===== PARTICLES ===== */
+.particle{
+  position:fixed;pointer-events:none;z-index:100;
+  font-size:11px;font-weight:bold;
+  animation:float-up .9s ease-out forwards;
+}
+@keyframes float-up{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-45px) scale(.7)}
+}
 
-  #field-container {
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px;
-  }
+/* ===== OVERLAY EVENTS ===== */
+#event-overlay{
+  position:fixed;inset:0;
+  pointer-events:none;
+  z-index:30;opacity:0;
+  transition:opacity .5s;
+}
+#event-overlay.fog{
+  opacity:1;
+  background:radial-gradient(ellipse at center,rgba(180,210,255,.35) 0%,rgba(150,180,230,.15) 100%);
+  animation:fog-drift 4s ease-in-out infinite;
+}
+@keyframes fog-drift{0%,100%{opacity:.6}50%{opacity:1}}
 
-  #field {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 3px;
-    touch-action: none;
-  }
+/* ===== EVENT BANNER ===== */
+#event-banner{
+  position:fixed;top:56px;left:50%;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg,#0d0800,#2d1f10,#0d0800);
+  border:2px solid var(--gold);
+  border-radius:10px;
+  padding:7px 14px;
+  font-size:12px;font-weight:bold;
+  color:var(--gold);
+  text-shadow:0 0 8px rgba(212,160,23,.8);
+  z-index:40;
+  opacity:0;pointer-events:none;
+  max-width:88vw;text-align:center;
+  white-space:normal;
+}
+#event-banner.show{animation:banner-anim 3s ease forwards;}
+@keyframes banner-anim{
+  0%{opacity:0;transform:translateX(-50%) translateY(-8px)}
+  12%{opacity:1;transform:translateX(-50%) translateY(0)}
+  80%{opacity:1}
+  100%{opacity:0;transform:translateX(-50%) translateY(-8px)}
+}
 
-  .tile {
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 4px;
-    background: var(--brown-mid);
-    border: 1px solid var(--brown-light);
-    position: relative;
-    cursor: pointer;
-    transition: transform 0.1s, background 0.3s;
-    overflow: visible;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    min-width: 44px;
-    min-height: 44px;
-  }
-  .tile:active { transform: scale(0.92); }
-  .tile.soil {
-    background: linear-gradient(135deg, #5c3d2e 0%, #4a2e1a 100%);
-  }
-  .tile.growing {
-    background: linear-gradient(135deg, #3d5c2e 0%, #2e4a1a 100%);
-    border-color: var(--green-mid);
-    animation: grow-pulse 2s ease-in-out infinite;
-  }
-  @keyframes grow-pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(74,124,47,0); }
-    50% { box-shadow: 0 0 0 3px rgba(74,124,47,0.4); }
-  }
-  .tile.ready {
-    background: linear-gradient(135deg, #4a7c2f 0%, #2d4a1e 100%);
-    border-color: var(--green-light);
-    animation: ready-bounce 0.8s ease-in-out infinite;
-  }
-  @keyframes ready-bounce {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-  }
-  .tile.facility {
-    background: linear-gradient(135deg, #6b4226 0%, #3d2b1f 100%);
-    border-color: var(--gold);
-    border-width: 2px;
-  }
-  .tile.empty { background: linear-gradient(135deg, #3d2b1f 0%, #2a1d14 100%); }
+/* ===== LEFT MENU ===== */
+#left-menu{
+  position:fixed;left:0;top:50%;
+  transform:translateY(-50%);
+  z-index:20;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  padding:4px;
+}
+.menu-icon-btn{
+  width:44px;height:44px;
+  background:linear-gradient(180deg,var(--brown-mid),var(--brown));
+  border:2px solid var(--border);
+  border-radius:8px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-size:18px;
+  cursor:pointer;
+  transition:all .15s;
+  position:relative;
+}
+.menu-icon-btn.active{
+  border-color:var(--gold);
+  background:linear-gradient(180deg,#4a3820,#2d2010);
+  box-shadow:0 0 8px rgba(212,160,23,.4);
+}
+.menu-icon-btn:active{transform:scale(.9);}
+.menu-icon-btn .btn-sub{font-size:7px;color:#8a7060;margin-top:1px;}
 
-  .tile-emoji {
-    font-size: 22px;
-    display: block;
-    text-align: center;
-    pointer-events: none;
-    line-height: 1;
-  }
-  .tile.ready .tile-emoji { filter: drop-shadow(0 0 4px rgba(122,182,72,0.8)); }
+/* ===== SLIDE PANEL ===== */
+#slide-panel{
+  position:fixed;left:52px;top:0;bottom:0;
+  width:0;overflow:hidden;
+  background:linear-gradient(90deg,var(--panel-bg),rgba(34,24,16,.97));
+  border-right:2px solid var(--border);
+  z-index:19;
+  transition:width .25s ease;
+  display:flex;flex-direction:column;
+}
+#slide-panel.open{width:160px;}
+#slide-panel-inner{
+  padding:8px 6px;
+  overflow-y:auto;
+  flex:1;
+  min-width:160px;
+}
+.panel-section-title{
+  font-size:9px;color:var(--gold);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin:8px 0 4px;
+  padding-bottom:2px;
+  border-bottom:1px solid var(--border);
+}
+.panel-item{
+  padding:7px 6px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:background .15s;
+  display:flex;align-items:center;gap:6px;
+  margin-bottom:2px;
+}
+.panel-item:hover{background:rgba(255,255,255,.07);}
+.panel-item.selected{
+  background:rgba(74,124,47,.25);
+  border:1px solid var(--green);
+}
+.panel-item .item-icon{font-size:18px;flex-shrink:0;}
+.panel-item .item-info{flex:1;overflow:hidden;}
+.panel-item .item-name{font-size:10px;font-weight:bold;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.panel-item .item-cost{font-size:9px;color:var(--gold);}
+.panel-item.locked{opacity:.4;}
 
-  .progress-bar {
-    position: absolute;
-    bottom: 2px;
-    left: 3px;
-    right: 3px;
-    height: 3px;
-    background: rgba(0,0,0,0.4);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--green-mid), var(--green-light));
-    border-radius: 2px;
-    transition: width 0.5s;
-  }
+/* ===== DETAIL PANEL ===== */
+#detail-panel{
+  position:fixed;bottom:0;left:0;right:0;
+  background:linear-gradient(180deg,rgba(13,8,0,.95),#0d0800);
+  border-top:2px solid var(--border);
+  padding:10px 12px 14px;
+  z-index:18;
+  transform:translateY(100%);
+  transition:transform .25s ease;
+  max-height:45vh;
+  overflow-y:auto;
+}
+#detail-panel.open{transform:translateY(0);}
+.dp-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
+.dp-icon{font-size:32px;flex-shrink:0;}
+.dp-info{flex:1;}
+.dp-name{font-size:15px;font-weight:bold;color:var(--gold);margin-bottom:2px;}
+.dp-cost{font-size:11px;color:var(--green-light);margin-bottom:4px;}
+.dp-flavor{font-size:10px;color:#c4a882;font-style:italic;line-height:1.4;margin-bottom:6px;padding:6px 8px;background:rgba(255,255,255,.04);border-left:2px solid var(--border-light);border-radius:0 4px 4px 0;}
+.dp-effects{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.dp-tag{font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(74,124,47,.3);border:1px solid var(--green);color:var(--green-light);}
+.dp-tag.combo{background:rgba(212,160,23,.2);border-color:var(--gold);color:var(--gold);}
+#dp-build-btn{
+  width:100%;padding:10px;
+  background:linear-gradient(180deg,var(--green),#2d4a1e);
+  border:2px solid var(--green-light);
+  border-radius:8px;
+  color:var(--cream);font-size:13px;font-weight:bold;
+  cursor:pointer;
+  transition:all .15s;
+}
+#dp-build-btn:active{transform:scale(.97);}
+#dp-build-btn:disabled{opacity:.4;cursor:not-allowed;}
+#dp-cancel-btn{
+  width:100%;padding:7px;margin-top:5px;
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:6px;
+  color:#8a7060;font-size:11px;
+  cursor:pointer;
+}
 
-  /* ========== COMBO BADGE ========== */
-  .combo-badge {
-    position: absolute;
-    top: -8px;
-    right: -4px;
-    background: var(--gold);
-    color: var(--brown-dark);
-    font-size: 8px;
-    font-weight: bold;
-    padding: 1px 3px;
-    border-radius: 4px;
-    z-index: 5;
-    pointer-events: none;
-  }
+/* ===== RESEARCH PANEL CONTENT ===== */
+.research-card{
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:7px 8px;
+  margin-bottom:6px;
+}
+.rc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.rc-name{font-size:11px;font-weight:bold;}
+.rc-status{font-size:9px;color:var(--gold);}
+.rc-desc{font-size:9px;color:#8a7060;margin-bottom:5px;}
+.rc-bar{height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.rc-bar-fill{height:100%;background:linear-gradient(90deg,#2980b9,#64b3e8);transition:width .4s;}
+.rc-btn{
+  width:100%;padding:5px;
+  background:rgba(41,128,185,.2);
+  border:1px solid #2980b9;
+  border-radius:4px;
+  color:#64b3e8;font-size:10px;
+  cursor:pointer;
+}
+.rc-btn:disabled{opacity:.4;cursor:not-allowed;}
 
-  /* ========== PARTICLES ========== */
-  .particle {
-    position: fixed;
-    pointer-events: none;
-    z-index: 100;
-    font-size: 11px;
-    font-weight: bold;
-    animation: float-up 1s ease-out forwards;
-  }
-  @keyframes float-up {
-    0% { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(-50px) scale(0.7); }
-  }
-  .particle.gold { color: var(--gold); }
-  .particle.green { color: var(--green-light); }
-  .particle.star { font-size: 16px; }
+/* ===== STAFF PANEL ===== */
+.staff-card{
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:7px;
+  margin-bottom:5px;
+  display:flex;align-items:center;gap:8px;
+}
+.sc-avatar{font-size:22px;}
+.sc-info{flex:1;}
+.sc-name{font-size:11px;font-weight:bold;}
+.sc-role{font-size:9px;color:#8a7060;}
+.sc-stats{display:flex;gap:6px;margin-top:2px;}
+.sc-stat{font-size:8px;background:rgba(255,255,255,.06);padding:1px 4px;border-radius:3px;}
+.hire-btn{
+  padding:4px 7px;
+  background:rgba(74,124,47,.3);
+  border:1px solid var(--green);
+  border-radius:4px;
+  color:var(--green-light);font-size:10px;
+  cursor:pointer;
+}
+.hire-btn:disabled{opacity:.4;cursor:not-allowed;}
 
-  .mushroom-particle {
-    position: fixed;
-    pointer-events: none;
-    z-index: 100;
-    font-size: 14px;
-    animation: burst 0.6s ease-out forwards;
-  }
-  @keyframes burst {
-    0% { opacity: 1; transform: translate(0,0) scale(1); }
-    100% { opacity: 0; transform: var(--end-pos) scale(0); }
-  }
+/* ===== BOTTOM TOOLBAR ===== */
+#bottom-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.8));
+  padding:4px 8px 8px;
+  display:flex;justify-content:flex-end;gap:6px;
+  z-index:17;
+  pointer-events:none;
+}
+#bottom-bar.hidden{display:none;}
+.tool-btn{
+  pointer-events:auto;
+  width:44px;height:44px;
+  background:linear-gradient(180deg,var(--brown-mid),var(--brown));
+  border:2px solid var(--border);
+  border-radius:50%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-size:18px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.tool-btn.active{border-color:var(--gold);box-shadow:0 0 8px rgba(212,160,23,.5);}
+.tool-btn:active{transform:scale(.88);}
 
-  /* ========== INFO PANEL ========== */
-  #info-panel {
-    background: rgba(26,15,8,0.9);
-    border-top: 1px solid var(--brown-mid);
-    border-bottom: 1px solid var(--brown-mid);
-    padding: 4px 10px;
-    display: flex;
-    gap: 12px;
-    font-size: 10px;
-    color: #c4a882;
-    flex-shrink: 0;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-  .stat-item { display: flex; align-items: center; gap: 3px; }
-  .stat-label { color: #8a7060; }
-  .stat-value { color: var(--cream); font-weight: bold; }
+/* ===== MODAL ===== */
+#modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.75);
+  z-index:50;
+  display:none;align-items:center;justify-content:center;
+  padding:16px;
+}
+#modal-overlay.open{display:flex;}
+#modal-box{
+  background:linear-gradient(180deg,#1a1006,var(--panel-bg));
+  border:2px solid var(--border-light);
+  border-radius:14px;
+  padding:14px;
+  width:100%;max-width:340px;
+  max-height:75vh;overflow-y:auto;
+}
+.modal-title{font-size:15px;font-weight:bold;color:var(--gold);margin-bottom:10px;text-align:center;}
+.modal-close{
+  width:100%;margin-top:8px;padding:9px;
+  background:var(--brown-mid);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--cream);font-size:13px;
+  cursor:pointer;
+}
 
-  /* ========== FOOTER ========== */
-  #footer {
-    background: linear-gradient(180deg, var(--brown-dark) 0%, #1a0f08 100%);
-    border-top: 3px solid var(--brown-light);
-    padding: 8px 8px 12px;
-    flex-shrink: 0;
-  }
-
-  #tab-bar {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 8px;
-  }
-  .tab-btn {
-    flex: 1;
-    padding: 6px 4px;
-    background: var(--brown-mid);
-    border: 1px solid var(--brown-light);
-    border-radius: 8px 8px 0 0;
-    color: #c4a882;
-    font-size: 11px;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-  }
-  .tab-btn.active {
-    background: var(--green-dark);
-    border-color: var(--green-mid);
-    color: var(--cream);
-  }
-
-  #tab-content {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-
-  .action-btn {
-    flex-shrink: 0;
-    padding: 8px 10px;
-    background: linear-gradient(180deg, var(--brown-mid) 0%, #4a2e1a 100%);
-    border: 2px solid var(--brown-light);
-    border-radius: 10px;
-    color: var(--cream);
-    font-size: 11px;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.15s;
-    min-width: 60px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-  .action-btn:active { transform: scale(0.93); filter: brightness(0.85); }
-  .action-btn.selected {
-    background: linear-gradient(180deg, var(--green-dark) 0%, #1a3a0e 100%);
-    border-color: var(--green-light);
-    box-shadow: 0 0 8px rgba(122,182,72,0.5);
-  }
-  .action-btn .btn-icon { font-size: 20px; }
-  .action-btn .btn-cost { font-size: 9px; color: var(--gold); }
-  .action-btn .btn-name { font-size: 10px; font-weight: bold; }
-  .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* ========== MODAL ========== */
-  #modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 50;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-  }
-  #modal-overlay.open { display: flex; }
-  #modal-box {
-    background: linear-gradient(180deg, #2a1d14 0%, var(--brown-dark) 100%);
-    border: 3px solid var(--brown-light);
-    border-radius: 16px;
-    padding: 16px;
-    width: 100%;
-    max-width: 340px;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  #modal-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: var(--gold);
-    margin-bottom: 12px;
-    text-align: center;
-  }
-  .modal-section { margin-bottom: 12px; }
-  .modal-section h3 { font-size: 12px; color: var(--green-light); margin-bottom: 6px; border-bottom: 1px solid var(--brown-mid); padding-bottom: 3px; }
-  .modal-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 0;
-    font-size: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-  .modal-item-info { display: flex; align-items: center; gap: 6px; }
-  .buy-btn {
-    background: var(--green-dark);
-    border: 1px solid var(--green-mid);
-    border-radius: 6px;
-    color: var(--cream);
-    padding: 4px 8px;
-    font-size: 11px;
-    cursor: pointer;
-  }
-  .buy-btn:active { transform: scale(0.9); }
-  .buy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  #modal-close {
-    width: 100%;
-    margin-top: 8px;
-    padding: 10px;
-    background: var(--brown-mid);
-    border: 2px solid var(--brown-light);
-    border-radius: 10px;
-    color: var(--cream);
-    font-size: 14px;
-    cursor: pointer;
-  }
-
-  /* ========== EVENT BANNER ========== */
-  #event-banner {
-    position: fixed;
-    top: 60px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(90deg, #1a0f08, #3d2b1f, #1a0f08);
-    border: 2px solid var(--gold);
-    border-radius: 12px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: bold;
-    color: var(--gold);
-    z-index: 30;
-    opacity: 0;
-    pointer-events: none;
-    white-space: nowrap;
-    text-shadow: 0 0 8px rgba(212,160,23,0.8);
-    max-width: 90vw;
-    white-space: normal;
-    text-align: center;
-  }
-  #event-banner.show { animation: banner-show 3s ease forwards; }
-  @keyframes banner-show {
-    0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-    15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-    80% { opacity: 1; }
-    100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-  }
-
-  /* ========== VISITOR ========== */
-  .visitor {
-    position: absolute;
-    font-size: 20px;
-    pointer-events: none;
-    z-index: 8;
-    animation: walk 8s linear forwards;
-    bottom: 20%;
-  }
-  @keyframes walk {
-    0% { transform: translateX(-40px); opacity: 0; }
-    5% { opacity: 1; }
-    95% { opacity: 1; }
-    100% { transform: translateX(calc(100vw + 40px)); opacity: 0; }
-  }
-
-  /* ========== ENCYCLOPEDIA ========== */
-  .enc-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 0;
-    font-size: 11px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-  .enc-icon { font-size: 20px; }
-  .enc-info { flex: 1; }
-  .enc-name { font-weight: bold; color: var(--cream); }
-  .enc-desc { color: #8a7060; font-size: 10px; }
-  .enc-locked { opacity: 0.3; filter: grayscale(1); }
-
-  /* ========== RESEARCH ========== */
-  .research-item {
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    font-size: 11px;
-  }
-  .research-title { font-weight: bold; color: var(--cream); margin-bottom: 2px; }
-  .research-desc { color: #8a7060; font-size: 10px; margin-bottom: 4px; }
-  .research-progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
-  .research-fill { height: 100%; background: linear-gradient(90deg, var(--green-dark), var(--green-light)); }
-
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: var(--brown-dark); }
-  ::-webkit-scrollbar-thumb { background: var(--brown-light); border-radius: 2px; }
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:var(--panel-bg);}
+::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px;}
 </style>
 </head>
 <body>
 
 <!-- HEADER -->
 <div id="header">
-  <div class="header-left">
-    <span>🍄</span>
-    <div>
-      <div id="money-display">$0</div>
-      <div id="money-delta">+0/日</div>
-    </div>
+  <div class="hdr-stat">
+    <span class="hdr-label">資金</span>
+    <span class="hdr-value" id="hdr-money">¥1,000</span>
   </div>
-  <div class="header-right">
-    <div id="weather-display">☀️ 晴れ</div>
-    <div id="date-display">1年目 1日</div>
+  <div id="title-badge">🍄 霧雨魔法キノコ園</div>
+  <div class="hdr-stat">
+    <span class="hdr-label">日付</span>
+    <span class="hdr-value blue" id="hdr-date">1年1日</span>
   </div>
 </div>
 
-<!-- INFO PANEL -->
-<div id="info-panel">
-  <div class="stat-item"><span class="stat-label">収穫数:</span><span class="stat-value" id="stat-harvest">0</span></div>
-  <div class="stat-item"><span class="stat-label">研究P:</span><span class="stat-value" id="stat-research">0</span></div>
-  <div class="stat-item"><span class="stat-label">満足度:</span><span class="stat-value" id="stat-satisfaction">50%</span></div>
-  <div class="stat-item"><span class="stat-label">図鑑:</span><span class="stat-value" id="stat-encyclopedia">0/12</span></div>
-  <div class="stat-item"><span class="stat-label">コンボ:</span><span class="stat-value" id="stat-combo">0</span></div>
-</div>
-
-<!-- MAIN FIELD -->
-<div id="main-area">
-  <div id="fog-overlay"></div>
-  <div id="spark-overlay"></div>
-  <div id="field-container">
-    <div id="field"></div>
+<!-- ISO VIEWPORT -->
+<div id="iso-viewport">
+  <div id="iso-scroll">
+    <div id="iso-stage"></div>
   </div>
 </div>
 
-<!-- FOOTER -->
-<div id="footer">
-  <div id="tab-bar">
-    <div class="tab-btn active" data-tab="plant">🌱 栽培</div>
-    <div class="tab-btn" data-tab="facility">🏗️ 施設</div>
-    <div class="tab-btn" data-tab="magic">✨ 魔法</div>
-    <div class="tab-btn" data-tab="menu">📖 メニュー</div>
+<!-- EVENT OVERLAY -->
+<div id="event-overlay"></div>
+<div id="event-banner"></div>
+
+<!-- LEFT MENU -->
+<div id="left-menu">
+  <div class="menu-icon-btn" data-tab="build" onclick="toggleTab('build')">
+    🏗️<span class="btn-sub">建設</span>
   </div>
-  <div id="tab-content"></div>
+  <div class="menu-icon-btn" data-tab="research" onclick="toggleTab('research')">
+    🔬<span class="btn-sub">研究</span>
+  </div>
+  <div class="menu-icon-btn" data-tab="staff" onclick="toggleTab('staff')">
+    👤<span class="btn-sub">人員</span>
+  </div>
+  <div class="menu-icon-btn" data-tab="log" onclick="toggleTab('log')">
+    📋<span class="btn-sub">ログ</span>
+  </div>
+</div>
+
+<!-- SLIDE PANEL -->
+<div id="slide-panel">
+  <div id="slide-panel-inner"></div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div id="detail-panel">
+  <div id="detail-content"></div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div id="bottom-bar">
+  <div class="tool-btn" id="tool-remove" title="撤去" onclick="toggleTool('remove')">🗑️</div>
+  <div class="tool-btn" id="tool-move" title="移動" onclick="toggleTool('move')">✋</div>
 </div>
 
 <!-- MODAL -->
-<div id="modal-overlay">
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
   <div id="modal-box">
-    <div id="modal-title">📖 メニュー</div>
+    <div class="modal-title" id="modal-title">情報</div>
     <div id="modal-body"></div>
-    <button id="modal-close" onclick="closeModal()">✕ 閉じる</button>
+    <button class="modal-close" onclick="closeModal()">✕ 閉じる</button>
   </div>
 </div>
 
-<!-- EVENT BANNER -->
-<div id="event-banner">🌟 イベント発生！</div>
-
 <script>
-// =====================================================
-//  DATA DEFINITIONS
-// =====================================================
-const MUSHROOMS = [
-  { id: 'common',    emoji: '🍄',  name: 'ベニテング',    cost: 30,   growTime: 8,   value: 50,   rp: 1, unlock: 0,    desc: '定番のキノコ。どこにでも生える。' },
-  { id: 'shiitake',  emoji: '🟫',  name: 'シイタケ',      cost: 50,   growTime: 12,  value: 80,   rp: 2, unlock: 100,  desc: '旨味成分がたっぷり。' },
-  { id: 'glowing',   emoji: '💚',  name: '光るキノコ',    cost: 100,  growTime: 20,  value: 200,  rp: 3, unlock: 300,  desc: '暗闇でも光る不思議な菌類。' },
-  { id: 'poison',    emoji: '💜',  name: '毒キノコ',      cost: 80,   growTime: 15,  value: 150,  rp: 2, unlock: 200,  desc: '一定の距離から見る分には美しい…' },
-  { id: 'giant',     emoji: '🎪',  name: '巨大キノコ',    cost: 200,  growTime: 30,  value: 500,  rp: 5, unlock: 600,  desc: '妖精が家として使いそうな大きさ。' },
-  { id: 'star',      emoji: '⭐',  name: '星屑キノコ',    cost: 300,  growTime: 40,  value: 800,  rp: 8, unlock: 1000, desc: '夜空から降ってきた胞子から育つ。' },
-  { id: 'phantom',   emoji: '👻',  name: '幻のキノコ',    cost: 0,    growTime: 5,   value: 1000, rp: 15,unlock: 999, desc: '霧の中でのみ出現する幻の菌類。', event: true },
-  { id: 'crispy',    emoji: '🔥',  name: '焼きキノコ',    cost: 0,    growTime: 0,   value: 300,  rp: 4, unlock: 999, desc: 'マスタースパークで生まれた一品。', event: true },
-  { id: 'rainbow',   emoji: '🌈',  name: '虹キノコ',      cost: 500,  growTime: 60,  value: 2000, rp: 20,unlock: 2000, desc: '極めて稀な七色の菌類。' },
-  { id: 'ice',       emoji: '🧊',  name: '氷晶キノコ',    cost: 150,  growTime: 25,  value: 350,  rp: 4, unlock: 500,  desc: '触れると冷たい不思議な質感。' },
-  { id: 'moon',      emoji: '🌙',  name: '月光キノコ',    cost: 250,  growTime: 35,  value: 600,  rp: 7, unlock: 800,  desc: '満月の夜に急成長する。' },
-  { id: 'magic',     emoji: '🔮',  name: '魔法キノコ',    cost: 400,  growTime: 50,  value: 1200, rp: 12,unlock: 1500, desc: '食べると不思議な幻覚が…らしい。' },
-];
+// ====================================================
+//  CONFIG
+// ====================================================
+const TW = 64, TH = 32, TD = 20; // tile width, height, depth
+const COLS = 10, ROWS = 10;
+const TICK_MS = 500;
 
-const FACILITIES = [
-  { id: 'lab',      emoji: '🔬', name: '怪しい研究室', cost: 500,  effect: '研究P+50%',         desc: '謎の実験を行う場所。', gridSize: 1 },
-  { id: 'bench',    emoji: '🪑', name: '休憩ベンチ',   cost: 200,  effect: '来客満足度+10%',      desc: '里人が一息つける場所。', gridSize: 1 },
-  { id: 'lamp',     emoji: '🪔', name: '魔法のランプ', cost: 300,  effect: '光るキノコ単価+50%',  desc: '怪しい光で夜も照らす。', gridSize: 1 },
-  { id: 'stump',    emoji: '🌲', name: '湿った切り株', cost: 150,  effect: '毒キノコ速度+30%',   desc: '苔むした古い切り株。', gridSize: 1 },
-  { id: 'teahouse', emoji: '🍵', name: '茶屋',         cost: 800,  effect: '来客満足度+25%',      desc: '熱いお茶で里人をもてなす。', gridSize: 2 },
-  { id: 'greenhouse',emoji:'🌿', name: '温室',         cost: 1200, effect: '全キノコ速度+20%',   desc: '最適な環境で育てる。', gridSize: 2 },
-];
-
-const MAGIC_SKILLS = [
-  { id: 'mist',    emoji: '💨', name: '霧吹き',          cost: 20,  cooldown: 10, effect: '選択タイルの成長+30%', desc: 'ひんやりした霧で潤す。' },
-  { id: 'potion',  emoji: '⚗️', name: '成長薬',          cost: 50,  cooldown: 20, effect: '成長速度2倍 (20秒)', desc: '怪しい液体を撒く。' },
-  { id: 'spark',   emoji: '⚡', name: 'スパーク',         cost: 30,  cooldown: 15, effect: '全タイルに少しダメージ…時々ボーナス', desc: '制御しきれない魔法の余波。' },
-  { id: 'harvest_all', emoji: '🌀', name: '全収穫',      cost: 100, cooldown: 40, effect: '成熟したキノコを全て収穫', desc: '範囲魔法で一気に刈り取る。' },
-];
-
-const VISITORS = [
-  { emoji: '🧙', name: '魔法使い',   preference: 'magic',   rp: 5  },
-  { emoji: '🧚', name: 'お腹を空かせた妖精', preference: 'common', rp: 2  },
-  { emoji: '👴', name: 'キノコ愛好家', preference: 'giant',  rp: 8  },
-  { emoji: '👘', name: '里の人',      preference: null,      rp: 3  },
-  { emoji: '🦊', name: '妖怪',        preference: 'poison',  rp: 6  },
-];
-
-const WEATHER_LIST = [
-  { id: 'sunny', label: '☀️ 晴れ',  growMult: 1.0, color: '#f5e6c8' },
-  { id: 'fog',   label: '🌫️ 霧',   growMult: 1.3, color: '#c8d8ff' },
-  { id: 'rain',  label: '🌧️ 雨',   growMult: 1.5, color: '#aaccff' },
-  { id: 'storm', label: '⛈️ 嵐',   growMult: 0.7, color: '#998899' },
-];
-
-const COMBOS = [
-  { a: 'stump', b: 'poison',  bonus: 'growSpeed', mult: 1.3, label: '成長+30%' },
-  { a: 'lamp',  b: 'glowing', bonus: 'value',     mult: 1.5, label: '価値+50%' },
-  { a: 'bench', b: 'teahouse',bonus: 'rp',        mult: 2.0, label: 'RP×2' },
-  { a: 'lab',   b: 'magic',   bonus: 'mutate',    mult: 1.0, label: '突然変異!' },
-];
-
-const GRID_COLS = 12;
-const GRID_ROWS = 8;
-const TOTAL_TILES = GRID_COLS * GRID_ROWS;
-
-// =====================================================
-//  GAME STATE
-// =====================================================
-let state = {
-  money: 500,
-  day: 1,
-  year: 1,
-  tickCount: 0,
-  weather: WEATHER_LIST[0],
-  weatherTimer: 0,
-  tiles: [],
-  facilities: {},
-  selectedAction: null,
-  selectedMushroom: MUSHROOMS[0],
-  selectedFacility: FACILITIES[0],
-  selectedMagic: MAGIC_SKILLS[0],
-  activeTab: 'plant',
-  stats: { harvest: 0, research: 0, satisfaction: 50, income: 0 },
-  encyclopedia: new Set(),
-  magicCooldowns: {},
-  potionActive: false,
-  potionTimer: 0,
-  visitors: [],
-  visitorTimer: 0,
-  eventTimer: 0,
-  fogEventActive: false,
-  researchProjects: [
-    { id: 'speedup1', name: '高速培養I',    desc: '全成長速度+10%',  cost: 100, progress: 0, required: 100, done: false },
-    { id: 'value1',   name: '旨味成分I',    desc: '全キノコ価値+10%',cost: 150, progress: 0, required: 150, done: false },
-    { id: 'mutate1',  name: '突然変異論',   desc: '変異率+5%',       cost: 200, progress: 0, required: 200, done: false },
-    { id: 'visitor1', name: '観光案内I',    desc: '来客頻度+20%',    cost: 120, progress: 0, required: 120, done: false },
-    { id: 'combo1',   name: 'コンボ理論',   desc: 'コンボ効果+20%',  cost: 300, progress: 0, required: 300, done: false },
-  ],
-  comboCount: 0,
-  totalIncome: 0,
+// ====================================================
+//  BUILDING DATA
+// ====================================================
+const BUILDINGS = {
+  // --- PATH ---
+  path: {
+    id:'path', category:'infra',
+    name:'土の道', icon:'🟫', cost:20,
+    flavor:'人とキノコの往来を円滑にする、素朴な踏み固めた土道だ。',
+    effects:['従業員移動速度+15%'],
+    combos:['water_channel','shelf_nameko'],
+    color:'#5c4030', w:1, h:1,
+    maxHP:100, buildTime:0
+  },
+  // --- SHELF ---
+  shelf_nameko:{
+    id:'shelf_nameko', category:'farm',
+    name:'ナメコ棚', icon:'🟤', cost:150,
+    flavor:'ヌルヌルして掴みにくいが、味噌汁の具として里の人間に大人気だぜ。',
+    effects:['収益 +80¥/周期','成長時間 12秒'],
+    combos:['water_channel','lab_basic'],
+    color:'#7b5e3a', w:1, h:1,
+    maxHP:100, buildTime:2, yieldTime:12, yieldAmt:80, yieldIcon:'🍄'
+  },
+  shelf_hikage:{
+    id:'shelf_hikage', category:'farm',
+    name:'日陰シイタケ棚', icon:'🌑', cost:200,
+    flavor:'日光が嫌いな天邪鬼なやつだが、旨味は一級品だぜ。',
+    effects:['収益 +120¥/周期','成長時間 18秒'],
+    combos:['water_channel','bench'],
+    color:'#4a3a28', w:1, h:1,
+    maxHP:100, buildTime:3, yieldTime:18, yieldAmt:120, yieldIcon:'🍄'
+  },
+  shelf_hikari:{
+    id:'shelf_hikari', category:'farm',
+    name:'光るキノコ棚', icon:'💚', cost:400,
+    flavor:'夜になると淡く光る。観光客が写真を撮りに来るらしいぞ。',
+    effects:['収益 +250¥/周期','観光収益+10%','成長時間 30秒'],
+    combos:['magic_lamp','water_channel'],
+    color:'#2d4a2a', w:1, h:1,
+    maxHP:100, buildTime:5, yieldTime:30, yieldAmt:250, yieldIcon:'💚',
+    unlockResearch:'bio1'
+  },
+  // --- INFRA ---
+  water_channel:{
+    id:'water_channel', category:'infra',
+    name:'湧き水の水路', icon:'💧', cost:180,
+    flavor:'冷たい水はキノコの故郷。隣接する棚の成長速度を20%上げる魔法のインフラだ。',
+    effects:['隣接棚 成長+20%','従業員 疲労-10%'],
+    combos:['shelf_nameko','shelf_hikage','shelf_hikari'],
+    color:'#1a3a5a', w:1, h:1,
+    maxHP:100, buildTime:1, adjBonus:0.2
+  },
+  magic_lamp:{
+    id:'magic_lamp', category:'infra',
+    name:'魔法のランプ', icon:'🪔', cost:250,
+    flavor:'怪しい光を放つ魔法製品。光るキノコの育ちを特別に促進する。',
+    effects:['隣接する光系棚 +30%収益','夜間作業可能'],
+    combos:['shelf_hikari'],
+    color:'#4a3820', w:1, h:1,
+    maxHP:100, buildTime:2, adjBonus:0.3
+  },
+  // --- FACILITY ---
+  collection_box:{
+    id:'collection_box', category:'facility',
+    name:'魔理沙の集荷箱', icon:'📦', cost:300,
+    flavor:'ここにキノコを放り込めば、私が責任を持って換金してくるぜ。……少し手数料をもらうがな！',
+    effects:['換金拠点 (必須)','売却速度 +1個/秒'],
+    combos:['path','shelf_nameko'],
+    color:'#5a3010', w:1, h:1,
+    maxHP:100, buildTime:1, isDropoff:true
+  },
+  bench:{
+    id:'bench', category:'facility',
+    name:'休憩ベンチ', icon:'🪑', cost:120,
+    flavor:'従業員がちょっと一休み。疲労回復が早くなるぜ。',
+    effects:['従業員 疲労回復+30%','観光客 満足度+5%'],
+    combos:['teahouse','path'],
+    color:'#5c4030', w:1, h:1,
+    maxHP:100, buildTime:1
+  },
+  teahouse:{
+    id:'teahouse', category:'facility',
+    name:'茶屋', icon:'🍵', cost:500,
+    flavor:'里から来た客に熱いお茶を振る舞う。口コミで評判が広がるかもな。',
+    effects:['観光客 満足度+20%','観光収益+15%','研究P+2/日'],
+    combos:['bench','path','collection_box'],
+    color:'#4a3010', w:1, h:1,
+    maxHP:100, buildTime:3, unlockResearch:'social1'
+  },
+  lab:{
+    id:'lab', category:'facility',
+    name:'怪しい研究室', icon:'🔬', cost:600,
+    flavor:'私の手作り研究施設だ。いろいろ実験してみるぜ。爆発しないことを祈れ。',
+    effects:['研究P+5/日','突然変異率+5%'],
+    combos:['shelf_nameko','shelf_hikari'],
+    color:'#3a2040', w:1, h:1,
+    maxHP:100, buildTime:4,
+    unlockBuilding:'shelf_hikari'
+  },
+  greenhouse:{
+    id:'greenhouse', category:'facility',
+    name:'温室', icon:'🌿', cost:900,
+    flavor:'全ての棚を最適環境で管理する。魔法と科学の合わせ技だ！',
+    effects:['全棚 成長+15%','天候デバフ無効'],
+    combos:['water_channel','lab'],
+    color:'#1a4a1a', w:2, h:2,
+    maxHP:200, buildTime:6,
+    unlockResearch:'agri1'
+  }
 };
 
-// Init tiles
-for (let i = 0; i < TOTAL_TILES; i++) {
-  state.tiles.push({ type: 'empty', mushroom: null, progress: 0, ready: false, facility: null });
+// Category definitions
+const CATEGORIES = {
+  farm:    { label:'🌱 栽培棚', items:['shelf_nameko','shelf_hikage','shelf_hikari'] },
+  infra:   { label:'⚙️ インフラ', items:['path','water_channel','magic_lamp'] },
+  facility:{ label:'🏠 施設', items:['collection_box','bench','teahouse','lab','greenhouse'] },
+};
+
+// ====================================================
+//  RESEARCH DATA
+// ====================================================
+const RESEARCH_TREE = [
+  { id:'bio1',    name:'菌類生理学I',   cost:80,  effect:'ナメコ棚収益+20% / 光るキノコ棚解放', rp:80,  done:false, progress:0 },
+  { id:'agri1',   name:'農業技術I',     cost:120, effect:'全棚成長+10% / 温室解放',             rp:120, done:false, progress:0 },
+  { id:'social1', name:'観光経営I',     cost:100, effect:'観光収益+15% / 茶屋解放',             rp:100, done:false, progress:0 },
+  { id:'magic1',  name:'魔法農法',      cost:200, effect:'突然変異イベント解放 / コンボ効果+20%',rp:200, done:false, progress:0 },
+  { id:'route1',  name:'物流最適化',    cost:150, effect:'従業員移動+20% / スタッフ枠+1',       rp:150, done:false, progress:0 },
+];
+
+// ====================================================
+//  STAFF DATA
+// ====================================================
+const STAFF_POOL = [
+  { id:'marisa',  name:'霧雨魔理沙', role:'魔法農家', icon:'🧙‍♀️', hat:'🎩',
+    speed:1.2, carry:2, magic:0.8, salary:0,  hired:true,
+    flavor:'私の農場だからな、最初からいるに決まってるだろ！' },
+  { id:'reimu',   name:'博麗霊夢',  role:'収穫士',  icon:'⛩️',  hat:'🎀',
+    speed:1.0, carry:3, magic:0.3, salary:200, hired:false,
+    flavor:'賽銭の代わりにキノコで払ってもらえるかしら。' },
+  { id:'alice',   name:'アリス',    role:'研究員',  icon:'🪆',  hat:'🎩',
+    speed:0.8, carry:1, magic:1.5, salary:300, hired:false,
+    flavor:'データを取りながら作業するわ。効率は保証できないけど。' },
+  { id:'cirno',   name:'チルノ',    role:'水管理士',icon:'🧊',  hat:'⭐',
+    speed:1.1, carry:2, magic:0.5, salary:150, hired:false,
+    flavor:'あたいが水路を管理すれば最強ね！…たぶん。' },
+];
+
+// ====================================================
+//  GAME STATE
+// ====================================================
+const G = {
+  money:1000, day:1, year:1, tick:0,
+  rp:0, rpPerDay:2,
+  satisfaction:40,
+  placed:[],    // {id, bldId, col, row, progress, yieldProg, hp, active}
+  staff:[],     // {staffId, x, y, state:'idle'|'work'|'carry'|'rest', target, carry, fatigue}
+  nextPlacedId:1,
+  selectedBldId:null,
+  activeTab:null,
+  activeTool:null,
+  weather:'sunny',
+  weatherTimer:0,
+  eventLog:[],
+  totalEarned:0,
+  comboCache:{}, // placedId -> [comboLabel]
+};
+
+// Init staff
+STAFF_POOL.forEach(sp => {
+  if (sp.hired) {
+    G.staff.push({ staffId:sp.id, x:100, y:100, state:'idle', target:null, carry:null, fatigue:0 });
+  }
+});
+
+// ====================================================
+//  ISO MATH
+// ====================================================
+function isoPos(col, row) {
+  const x = (col - row) * (TW / 2);
+  const y = (col + row) * (TH / 2);
+  return { x, y };
+}
+function screenToIso(sx, sy) {
+  // inverse iso
+  const col = (sx / (TW/2) + sy / (TH/2)) / 2;
+  const row = (sy / (TH/2) - sx / (TW/2)) / 2;
+  return { col: Math.floor(col), row: Math.floor(row) };
 }
 
-// =====================================================
-//  DOM HELPERS
-// =====================================================
-function $(id) { return document.getElementById(id); }
+// Stage offset so grid is centered
+let stageOffX = 0, stageOffY = 0;
+function initStage() {
+  const vp = document.getElementById('iso-viewport');
+  const vpW = vp.clientWidth, vpH = vp.clientHeight;
+  const stage = document.getElementById('iso-stage');
+  // Center the grid
+  stageOffX = vpW / 2;
+  stageOffY = vpH * 0.18;
+  stage.style.transform = `translate(${stageOffX}px, ${stageOffY}px)`;
+}
 
-function spawnParticle(x, y, text, cls = 'gold') {
+// ====================================================
+//  TILE GRID
+// ====================================================
+const tileEls = [];
+function buildGrid() {
+  const stage = document.getElementById('iso-stage');
+  stage.innerHTML = '';
+  // Render in diagonal order for proper z-layering
+  for (let sum = 0; sum < COLS + ROWS - 1; sum++) {
+    for (let col = 0; col < COLS; col++) {
+      const row = sum - col;
+      if (row < 0 || row >= ROWS) continue;
+      createTile(col, row, stage);
+    }
+  }
+}
+
+function createTile(col, row, stage) {
+  const { x, y } = isoPos(col, row);
+  const el = document.createElement('div');
+  el.className = 'iso-tile';
+  el.dataset.col = col;
+  el.dataset.row = row;
+  el.style.cssText = `
+    --tw:${TW}px;--th:${TH}px;
+    left:${x - TW/2}px;
+    top:${y - TH/2}px;
+    width:${TW}px;
+    height:${TH + TD}px;
+    z-index:${col + row};
+  `;
+  // Top face
+  const top = document.createElement('div');
+  top.className = 'tile-top';
+  top.style.cssText = `width:${TW}px;height:${TH}px;background:#2a1e10;`;
+  // Left face
+  const left = document.createElement('div');
+  left.className = 'tile-left';
+  left.style.cssText = `width:${TW/2}px;height:${TD}px;background:#1a1008;top:${TH/2}px;left:0;clip-path:none;`;
+  // Right face
+  const right = document.createElement('div');
+  right.className = 'tile-right';
+  right.style.cssText = `width:${TW/2}px;height:${TD}px;background:#150d06;top:${TH/2}px;left:${TW/2}px;clip-path:none;`;
+
+  el.appendChild(top);
+  el.appendChild(left);
+  el.appendChild(right);
+
+  el.addEventListener('pointerdown', () => onTileTap(col, row));
+  el.addEventListener('touchstart', (e)=>e.preventDefault(), {passive:false});
+
+  stage.appendChild(el);
+  tileEls.push({ el, top, col, row });
+}
+
+function getTileEl(col, row) {
+  return tileEls.find(t => t.col === col && t.row === row);
+}
+
+function highlightTile(col, row, color) {
+  const t = getTileEl(col, row);
+  if (t) t.top.style.background = color;
+}
+function resetTileHighlight(col, row) {
+  const t = getTileEl(col, row);
+  if (t) t.top.style.background = '#2a1e10';
+}
+
+// ====================================================
+//  BUILDING PLACEMENT
+// ====================================================
+function getBldAt(col, row) {
+  return G.placed.find(p => p.col === col && p.row === row);
+}
+
+function onTileTap(col, row) {
+  if (G.activeTool === 'remove') {
+    removeBldAt(col, row);
+    return;
+  }
+  const existing = getBldAt(col, row);
+  if (existing) {
+    showPlacedInfo(existing);
+    return;
+  }
+  if (G.selectedBldId) {
+    placeBuild(G.selectedBldId, col, row);
+  }
+}
+
+function placeBuild(bldId, col, row) {
+  const bld = BUILDINGS[bldId];
+  if (!bld) return;
+  if (G.money < bld.cost) { showBanner('💰 資金が足りない！'); return; }
+  if (getBldAt(col, row)) { showBanner('⚠️ 既に建物がある！'); return; }
+  // Check unlock
+  if (bld.unlockResearch && !RESEARCH_TREE.find(r=>r.id===bld.unlockResearch&&r.done)) {
+    showBanner('🔬 先に研究を完了させてくれ！'); return;
+  }
+
+  G.money -= bld.cost;
+  const placed = {
+    id: G.nextPlacedId++,
+    bldId,
+    col, row,
+    progress: 0,       // build progress 0-100
+    yieldProg: 0,      // harvest progress 0-100
+    hp: bld.maxHP,
+    active: bld.buildTime === 0,
+    hasYield: false,
+    el: null,
+    labelEl: null,
+    progressEl: null,
+    comboEl: null,
+  };
+  G.placed.push(placed);
+
+  // DOM
+  renderPlacedBuilding(placed);
+  updateCombos();
+  updateUI();
+  addLog(`🏗️ ${bld.name} を (${col},${row}) に建設開始`);
+  showBanner(`🏗️ ${bld.name} を建設中...`);
+}
+
+function renderPlacedBuilding(placed) {
+  const bld = BUILDINGS[placed.bldId];
+  const { x, y } = isoPos(placed.col, placed.row);
+  const stage = document.getElementById('iso-stage');
+
+  const sprite = document.createElement('div');
+  sprite.className = 'bld-sprite';
+  sprite.id = `bld-${placed.id}`;
+  sprite.style.cssText = `
+    left:${x}px;
+    top:${y - TH/2 - 36}px;
+    z-index:${(placed.col + placed.row) * 2 + 1};
+    width:${TW}px;
+  `;
+
+  const body = document.createElement('div');
+  body.className = 'bld-body';
+  body.style.cssText = `width:${TW-8}px;height:36px;background:linear-gradient(180deg,${bld.color}cc,${bld.color}88);`;
+  body.textContent = bld.icon;
+
+  const label = document.createElement('div');
+  label.className = 'bld-label';
+  label.textContent = bld.name;
+
+  const pbar = document.createElement('div');
+  pbar.className = 'bld-progress';
+  const pfill = document.createElement('div');
+  pfill.className = 'bld-progress-fill';
+  pfill.style.width = placed.active ? '100%' : '0%';
+  pbar.appendChild(pfill);
+
+  const comboEl = document.createElement('div');
+  comboEl.className = 'bld-combo';
+  comboEl.style.display = 'none';
+
+  body.appendChild(comboEl);
+  sprite.appendChild(body);
+  sprite.appendChild(label);
+  sprite.appendChild(pbar);
+
+  stage.appendChild(sprite);
+  placed.el = sprite;
+  placed.labelEl = label;
+  placed.progressEl = pfill;
+  placed.comboEl = comboEl;
+
+  // Color tile top
+  const te = getTileEl(placed.col, placed.row);
+  if (te) te.top.style.background = bld.color;
+}
+
+function removeBldAt(col, row) {
+  const idx = G.placed.findIndex(p => p.col === col && p.row === row);
+  if (idx < 0) return;
+  const placed = G.placed[idx];
+  const bld = BUILDINGS[placed.bldId];
+  G.money += Math.floor(bld.cost * 0.5);
+  placed.el?.remove();
+  G.placed.splice(idx, 1);
+  resetTileHighlight(col, row);
+  updateCombos();
+  updateUI();
+  addLog(`🗑️ ${bld.name} を撤去 (50%返金)`);
+  showBanner(`🗑️ ${bld.name} を撤去した`);
+}
+
+function showPlacedInfo(placed) {
+  const bld = BUILDINGS[placed.bldId];
+  const combos = G.comboCache[placed.id] || [];
+  openModal(
+    `${bld.icon} ${bld.name}`,
+    `<div style="font-size:10px;color:#8a7060;font-style:italic;padding:6px;background:rgba(255,255,255,.04);border-left:2px solid var(--border-light);margin-bottom:8px">${bld.flavor}</div>
+     <div style="font-size:10px;margin-bottom:6px">状態: <strong>${placed.active ? '稼働中' : '建設中'}</strong></div>
+     ${bld.yieldTime ? `<div style="font-size:10px;margin-bottom:4px">収穫進捗: ${Math.floor(placed.yieldProg)}%</div>` : ''}
+     ${combos.length ? `<div style="margin-bottom:6px">${combos.map(c=>`<span class="dp-tag combo">⚡ ${c}</span>`).join(' ')}</div>` : ''}
+     <div>${bld.effects.map(e=>`<div class="dp-tag" style="margin-bottom:3px;display:inline-block">✅ ${e}</div>`).join('')}</div>`
+  );
+}
+
+// ====================================================
+//  COMBO SYSTEM
+// ====================================================
+function getAdjacentPlaced(col, row) {
+  const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+  return dirs
+    .map(([dc,dr]) => getBldAt(col+dc, row+dr))
+    .filter(Boolean);
+}
+
+function updateCombos() {
+  G.comboCache = {};
+  G.placed.forEach(placed => {
+    const bld = BUILDINGS[placed.bldId];
+    if (!bld.combos?.length) return;
+    const adj = getAdjacentPlaced(placed.col, placed.row);
+    const hits = adj.filter(a => bld.combos.includes(a.bldId));
+    if (hits.length) {
+      const labels = hits.map(h => {
+        const hb = BUILDINGS[h.bldId];
+        return `${hb.icon}${hb.name.slice(0,4)}と相性◎`;
+      });
+      G.comboCache[placed.id] = labels;
+      if (placed.comboEl) {
+        placed.comboEl.textContent = '⚡' + labels[0].slice(0,6);
+        placed.comboEl.style.display = 'block';
+      }
+    } else {
+      if (placed.comboEl) placed.comboEl.style.display = 'none';
+    }
+  });
+}
+
+// ====================================================
+//  CHARACTER AI
+// ====================================================
+function isoToScreen(col, row) {
+  const { x, y } = isoPos(col, row);
+  return { x: stageOffX + x, y: stageOffY + y };
+}
+
+function spawnCharEl(s) {
+  const sp = STAFF_POOL.find(sp => sp.id === s.staffId);
+  const stage = document.getElementById('iso-stage');
+  const el = document.createElement('div');
+  el.className = 'character';
+  el.id = `char-${s.staffId}`;
+  el.style.cssText = `left:${s.x}px;top:${s.y}px;z-index:50;`;
+  el.innerHTML = `
+    <span class="char-hat">${sp.hat}</span>
+    <div class="char-body" style="background:${sp.id==='marisa'?'#2a1a60':sp.id==='reimu'?'#8b0000':sp.id==='alice'?'#003366':'#1a4a60'}">${sp.icon}</div>
+    <div class="char-shadow"></div>
+    <div class="char-status" id="cs-${s.staffId}">待機中</div>
+  `;
+  stage.appendChild(el);
+  s.el = el;
+  s.statusEl = el.querySelector(`#cs-${s.staffId}`);
+}
+
+function initCharacters() {
+  G.staff.forEach(s => {
+    if (!s.el) spawnCharEl(s);
+  });
+}
+
+function updateCharacters() {
+  G.staff.forEach(s => {
+    const sp = STAFF_POOL.find(sp => sp.id === s.staffId);
+    s.fatigue = Math.min(100, s.fatigue + 0.3);
+
+    // Fatigue → rest
+    if (s.fatigue > 80 && s.state !== 'rest') {
+      const bench = G.placed.find(p => p.bldId === 'bench' && p.active);
+      if (bench) {
+        s.state = 'rest';
+        s.target = bench;
+      }
+    }
+
+    // Bench recovery
+    const benchNearby = G.placed.find(p => p.bldId === 'bench' && p.active &&
+      Math.abs(p.col - Math.round(s.x / TW)) < 2);
+    const fatigueRecovery = benchNearby ? 1.5 : 0.5;
+
+    if (s.state === 'rest') {
+      s.fatigue = Math.max(0, s.fatigue - fatigueRecovery * 3);
+      if (s.fatigue < 20) s.state = 'idle';
+    }
+
+    if (s.state === 'idle') {
+      // Find a ready yield
+      const readyShelf = G.placed.find(p => {
+        const b = BUILDINGS[p.bldId];
+        return b?.yieldTime && p.hasYield && p.active;
+      });
+      if (readyShelf) {
+        s.state = 'work';
+        s.target = readyShelf;
+      }
+    }
+
+    if (s.state === 'work' && s.target) {
+      const tgt = s.target;
+      const { x: tx, y: ty } = isoPos(tgt.col, tgt.row);
+      const speed = (sp.speed * 1.5) * (G.placed.some(p=>p.bldId==='path'&&p.active) ? 1.15 : 1);
+      const dx = tx - s.x, dy = ty - s.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 5) {
+        // Arrived → harvest
+        tgt.hasYield = false;
+        tgt.yieldProg = 0;
+        const bld = BUILDINGS[tgt.bldId];
+        let amt = bld.yieldAmt;
+        // Combo bonus
+        const adj = getAdjacentPlaced(tgt.col, tgt.row);
+        adj.forEach(a => {
+          if (a.bldId === 'water_channel' && a.active) amt = Math.floor(amt * 1.1);
+          if (a.bldId === 'magic_lamp' && a.active && bld.id === 'shelf_hikari') amt = Math.floor(amt * 1.3);
+        });
+        if (RESEARCH_TREE.find(r=>r.id==='bio1'&&r.done) && bld.id === 'shelf_nameko') amt = Math.floor(amt * 1.2);
+
+        s.carry = { icon: bld.yieldIcon, amt };
+        s.state = 'carry';
+        // Find dropoff
+        s.target = G.placed.find(p => p.bldId === 'collection_box' && p.active) || null;
+        if (!s.target) {
+          // No dropoff → sell directly
+          doSell(s);
+          s.state = 'idle';
+        }
+        updateCarryDisplay(s, sp);
+      } else {
+        s.x += (dx / dist) * speed;
+        s.y += (dy / dist) * speed;
+        if (s.el) s.el.style.transition = 'left .1s linear,top .1s linear';
+        if (s.el) { s.el.style.left = s.x+'px'; s.el.style.top = s.y+'px'; }
+      }
+    }
+
+    if (s.state === 'carry' && s.target) {
+      const sp2 = STAFF_POOL.find(sp=>sp.id===s.staffId);
+      const { x: tx, y: ty } = isoPos(s.target.col, s.target.row);
+      const speed = sp2.speed * 1.2;
+      const dx = tx - s.x, dy = ty - s.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 5) {
+        doSell(s);
+        s.carry = null;
+        s.state = 'idle';
+        updateCarryDisplay(s, sp2);
+      } else {
+        s.x += (dx / dist) * speed;
+        s.y += (dy / dist) * speed;
+        if (s.el) { s.el.style.left = s.x+'px'; s.el.style.top = s.y+'px'; }
+      }
+    }
+
+    // Status label
+    if (s.statusEl) {
+      s.statusEl.textContent =
+        s.state === 'idle' ? '待機中' :
+        s.state === 'work' ? '収穫中🍄' :
+        s.state === 'carry' ? '運搬中📦' : '休憩中💤';
+    }
+    if (s.fatigue > 60 && s.state !== 'rest') {
+      if (s.statusEl) s.statusEl.textContent += '😓';
+    }
+  });
+}
+
+function updateCarryDisplay(s, sp) {
+  if (!s.el) return;
+  let carryEl = s.el.querySelector('.char-carry');
+  if (s.carry) {
+    if (!carryEl) {
+      carryEl = document.createElement('span');
+      carryEl.className = 'char-carry';
+      s.el.querySelector('.char-body').appendChild(carryEl);
+    }
+    carryEl.textContent = s.carry.icon;
+  } else if (carryEl) {
+    carryEl.remove();
+  }
+}
+
+function doSell(s) {
+  if (!s.carry) return;
+  const amt = s.carry.amt;
+  G.money += amt;
+  G.totalEarned += amt;
+  G.stats = G.stats || {};
+  spawnParticleAt(s.x + stageOffX, s.y + stageOffY, `+¥${amt}`, 'gold');
+  addLog(`💰 ${STAFF_POOL.find(sp=>sp.id===s.staffId)?.name} が ¥${amt} を換金`);
+  updateUI();
+}
+
+// ====================================================
+//  YIELD GROWTH
+// ====================================================
+function updateYields() {
+  G.placed.forEach(p => {
+    const bld = BUILDINGS[p.bldId];
+
+    // Build progress
+    if (!p.active && bld.buildTime > 0) {
+      p.progress += 100 / (bld.buildTime * (60000 / TICK_MS));
+      if (p.progress >= 100) {
+        p.progress = 100;
+        p.active = true;
+        addLog(`✅ ${bld.name} が完成した！`);
+        showBanner(`✅ ${bld.name} が完成した！`);
+      }
+      if (p.progressEl) p.progressEl.style.width = p.progress + '%';
+      return;
+    }
+
+    if (!bld.yieldTime || p.hasYield) return;
+
+    // Growth speed with bonuses
+    let speed = 100 / (bld.yieldTime * (1000 / TICK_MS));
+    const adj = getAdjacentPlaced(p.col, p.row);
+    adj.forEach(a => {
+      if (a.bldId === 'water_channel' && a.active) speed *= 1.2;
+      if (a.bldId === 'greenhouse' && a.active) speed *= 1.15;
+    });
+    if (RESEARCH_TREE.find(r=>r.id==='agri1'&&r.done)) speed *= 1.1;
+    if (G.weather === 'rain') speed *= 1.3;
+    if (G.weather === 'storm') speed *= 0.6;
+
+    p.yieldProg += speed;
+    if (p.progressEl) p.progressEl.style.width = Math.min(100,p.yieldProg) + '%';
+    if (p.progressEl) p.progressEl.style.background = 'linear-gradient(90deg,var(--gold),#f5e6c8)';
+
+    if (p.yieldProg >= 100) {
+      p.hasYield = true;
+      p.yieldProg = 0;
+      if (p.progressEl) p.progressEl.style.background = 'linear-gradient(90deg,var(--green),var(--green-light))';
+      if (p.progressEl) p.progressEl.style.width = '100%';
+      showBanner(`🍄 ${bld.name} が収穫できる！`);
+    }
+  });
+}
+
+// ====================================================
+//  DAY CYCLE
+// ====================================================
+function dayTick() {
+  G.tick++;
+  if (G.tick % (60000 / TICK_MS) === 0) {
+    G.day++;
+    if (G.day > 30) { G.day = 1; G.year++; }
+    // RP gain
+    let rp = G.rpPerDay;
+    if (G.placed.some(p=>p.bldId==='lab'&&p.active)) rp += 5;
+    if (G.placed.some(p=>p.bldId==='teahouse'&&p.active)) rp += 2;
+    G.rp += rp;
+    // Satisfaction
+    if (G.placed.some(p=>p.bldId==='bench'&&p.active)) G.satisfaction = Math.min(100, G.satisfaction + 5);
+    if (G.placed.some(p=>p.bldId==='teahouse'&&p.active)) G.satisfaction = Math.min(100, G.satisfaction + 10);
+    // Weather change
+    G.weatherTimer++;
+    if (G.weatherTimer > 3 + Math.floor(Math.random()*4)) {
+      G.weatherTimer = 0;
+      const weathers = ['sunny','sunny','rain','fog','storm'];
+      G.weather = weathers[Math.floor(Math.random()*weathers.length)];
+      updateWeatherDisplay();
+    }
+    // Random event
+    if (Math.random() < 0.08) triggerEvent();
+    updateUI();
+  }
+}
+
+function updateWeatherDisplay() {
+  const map = {sunny:'☀️晴れ', rain:'🌧️雨', fog:'🌫️霧', storm:'⛈️嵐'};
+  document.getElementById('hdr-date').textContent =
+    `${G.year}年${G.day}日 ${map[G.weather]||''}`;
+}
+
+// ====================================================
+//  RANDOM EVENTS
+// ====================================================
+const EVENTS = [
+  { id:'fog_event', banner:'🌫️ 幻想郷の霧！ キノコが急成長中…', fn: ()=>{
+    G.placed.filter(p=>BUILDINGS[p.bldId]?.yieldTime && p.active).forEach(p=>{
+      p.yieldProg = Math.min(100, p.yieldProg + 30);
+    });
+    document.getElementById('event-overlay').className = 'fog';
+    setTimeout(()=>document.getElementById('event-overlay').className='',8000);
+  }},
+  { id:'spark', banner:'💥 マスタースパーク発動！ 焼けキノコ大量発生！', fn: ()=>{
+    G.money += 500;
+    spawnParticleAt(window.innerWidth/2, window.innerHeight/2, '+¥500 焼きキノコ！', 'gold');
+  }},
+  { id:'visitor', banner:'👘 里からお客さんが来た！ 満足度UP！', fn: ()=>{
+    G.satisfaction = Math.min(100, G.satisfaction + 15);
+    G.money += G.placed.some(p=>p.bldId==='teahouse'&&p.active) ? 200 : 80;
+  }},
+  { id:'mutation', banner:'🧬 突然変異！ ランダムな棚の収益が一時的にUP！', fn: ()=>{
+    const shelves = G.placed.filter(p=>BUILDINGS[p.bldId]?.yieldTime && p.active);
+    if (shelves.length) {
+      const s = shelves[Math.floor(Math.random()*shelves.length)];
+      s.yieldProg = 100; s.hasYield = true;
+    }
+  }},
+];
+
+function triggerEvent() {
+  if (!RESEARCH_TREE.find(r=>r.id==='magic1'&&r.done) && Math.random() < 0.5) return;
+  const ev = EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  showBanner(ev.banner);
+  ev.fn();
+  addLog(`⚡ イベント: ${ev.banner}`);
+}
+
+// ====================================================
+//  PARTICLES
+// ====================================================
+function spawnParticleAt(x, y, text, cls) {
   const el = document.createElement('div');
   el.className = `particle ${cls}`;
   el.textContent = text;
   el.style.left = x + 'px';
   el.style.top = y + 'px';
+  el.style.color = cls === 'gold' ? 'var(--gold)' : 'var(--green-light)';
   document.body.appendChild(el);
   el.addEventListener('animationend', () => el.remove());
 }
 
-function spawnBurst(x, y, emoji, count = 5) {
-  for (let i = 0; i < count; i++) {
-    const el = document.createElement('div');
-    el.className = 'mushroom-particle';
-    el.textContent = emoji;
-    const angle = (360 / count) * i;
-    const dist = 30 + Math.random() * 20;
-    const dx = Math.cos(angle * Math.PI / 180) * dist;
-    const dy = Math.sin(angle * Math.PI / 180) * dist;
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    el.style.setProperty('--end-pos', `translate(${dx}px, ${dy}px)`);
-    el.style.animationDelay = (Math.random() * 0.1) + 's';
-    document.body.appendChild(el);
-    el.addEventListener('animationend', () => el.remove());
+// ====================================================
+//  UI: HEADER
+// ====================================================
+function updateUI() {
+  document.getElementById('hdr-money').textContent = '¥' + G.money.toLocaleString();
+  document.getElementById('hdr-date').textContent =
+    `${G.year}年${G.day}日`;
+}
+
+// ====================================================
+//  UI: TAB / PANEL
+// ====================================================
+function toggleTab(tab) {
+  const panel = document.getElementById('slide-panel');
+  const inner = document.getElementById('slide-panel-inner');
+
+  document.querySelectorAll('.menu-icon-btn').forEach(b => b.classList.remove('active'));
+
+  if (G.activeTab === tab) {
+    G.activeTab = null;
+    panel.classList.remove('open');
+    closeDetailPanel();
+    return;
+  }
+  G.activeTab = tab;
+  document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
+  panel.classList.add('open');
+
+  if (tab === 'build') renderBuildPanel(inner);
+  else if (tab === 'research') renderResearchPanel(inner);
+  else if (tab === 'staff') renderStaffPanel(inner);
+  else if (tab === 'log') renderLogPanel(inner);
+}
+
+function renderBuildPanel(inner) {
+  let html = '';
+  for (const [catId, cat] of Object.entries(CATEGORIES)) {
+    html += `<div class="panel-section-title">${cat.label}</div>`;
+    cat.items.forEach(bldId => {
+      const bld = BUILDINGS[bldId];
+      const locked = bld.unlockResearch && !RESEARCH_TREE.find(r=>r.id===bld.unlockResearch&&r.done);
+      html += `<div class="panel-item ${G.selectedBldId===bldId?'selected':''} ${locked?'locked':''}"
+        onclick="selectBld('${bldId}')">
+        <span class="item-icon">${bld.icon}</span>
+        <div class="item-info">
+          <div class="item-name">${bld.name}${locked?' 🔒':''}</div>
+          <div class="item-cost">¥${bld.cost}</div>
+        </div>
+      </div>`;
+    });
+  }
+  inner.innerHTML = html;
+}
+
+function selectBld(bldId) {
+  G.selectedBldId = bldId;
+  G.activeTool = null;
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+  renderBuildPanel(document.getElementById('slide-panel-inner'));
+  showDetailPanel(bldId);
+}
+
+function showDetailPanel(bldId) {
+  const bld = BUILDINGS[bldId];
+  const panel = document.getElementById('detail-panel');
+  const content = document.getElementById('detail-content');
+
+  const combosStr = bld.combos.map(c => {
+    const b = BUILDINGS[c];
+    return b ? `<span class="dp-tag combo">⚡ ${b.icon}${b.name}</span>` : '';
+  }).join('');
+
+  content.innerHTML = `
+    <div class="dp-row">
+      <span class="dp-icon">${bld.icon}</span>
+      <div class="dp-info">
+        <div class="dp-name">${bld.name}</div>
+        <div class="dp-cost">建設コスト: ¥${bld.cost}　建設時間: ${bld.buildTime}秒</div>
+      </div>
+    </div>
+    <div class="dp-flavor">"${bld.flavor}"</div>
+    <div class="dp-effects">
+      ${bld.effects.map(e=>`<span class="dp-tag">✅ ${e}</span>`).join('')}
+    </div>
+    ${combosStr ? `<div style="margin-bottom:8px"><div style="font-size:9px;color:#8a7060;margin-bottom:3px">◆ 相性(コンボ)</div>${combosStr}</div>` : ''}
+    <button id="dp-build-btn" onclick="startPlaceMode()">
+      🏗️ タイルを選んで建設
+    </button>
+    <button id="dp-cancel-btn" onclick="closeDetailPanel()">キャンセル</button>
+  `;
+  panel.classList.add('open');
+  document.getElementById('bottom-bar').classList.add('hidden');
+}
+
+function closeDetailPanel() {
+  document.getElementById('detail-panel').classList.remove('open');
+  document.getElementById('bottom-bar').classList.remove('hidden');
+  G.selectedBldId = null;
+  if (G.activeTab === 'build') {
+    renderBuildPanel(document.getElementById('slide-panel-inner'));
   }
 }
 
+function startPlaceMode() {
+  closeDetailPanel();
+  showBanner(`📍 ${BUILDINGS[G.selectedBldId]?.name} を置く場所をタップ！`);
+}
+
+// ====================================================
+//  UI: RESEARCH
+// ====================================================
+function renderResearchPanel(inner) {
+  let html = `<div class="panel-section-title">研究ポイント: ${Math.floor(G.rp)} RP</div>`;
+  RESEARCH_TREE.forEach(r => {
+    const pct = Math.min(100, (r.progress / r.rp) * 100);
+    html += `<div class="research-card">
+      <div class="rc-header">
+        <span class="rc-name">${r.done?'✅':''} ${r.name}</span>
+        <span class="rc-status">${r.done?'完了':Math.floor(pct)+'%'}</span>
+      </div>
+      <div class="rc-desc">${r.effect}</div>
+      <div class="rc-bar"><div class="rc-bar-fill" style="width:${pct}%"></div></div>
+      ${!r.done ? `<button class="rc-btn" onclick="investRP('${r.id}')" ${G.rp < 30 ? 'disabled':''}>
+        RP 30 投入 (残り ${Math.ceil((r.rp - r.progress)/30)} 回)
+      </button>` : ''}
+    </div>`;
+  });
+  inner.innerHTML = html;
+}
+
+function investRP(id) {
+  const r = RESEARCH_TREE.find(r=>r.id===id);
+  if (!r || r.done || G.rp < 30) return;
+  G.rp -= 30;
+  r.progress += 30;
+  if (r.progress >= r.rp) {
+    r.done = true;
+    r.progress = r.rp;
+    showBanner(`✅ 研究完了: ${r.name}！`);
+    addLog(`🔬 研究完了: ${r.name}`);
+    // Rebuild panel for unlocks
+    renderBuildPanel(document.getElementById('slide-panel-inner'));
+  }
+  renderResearchPanel(document.getElementById('slide-panel-inner'));
+  updateUI();
+}
+
+// ====================================================
+//  UI: STAFF
+// ====================================================
+function renderStaffPanel(inner) {
+  let html = `<div class="panel-section-title">人員管理</div>`;
+  STAFF_POOL.forEach(sp => {
+    const active = G.staff.find(s=>s.staffId===sp.id);
+    html += `<div class="staff-card">
+      <span class="sc-avatar">${sp.icon}</span>
+      <div class="sc-info">
+        <div class="sc-name">${sp.name}</div>
+        <div class="sc-role">${sp.role}</div>
+        <div class="sc-stats">
+          <span class="sc-stat">速度${sp.speed}</span>
+          <span class="sc-stat">運搬${sp.carry}</span>
+          <span class="sc-stat">魔法${sp.magic}</span>
+        </div>
+        ${active ? `<div style="font-size:8px;color:#8a7060;margin-top:2px">疲労: ${Math.floor(active.fatigue)}% | ${active.state}</div>` : ''}
+      </div>
+      ${sp.salary > 0 ?
+        `<button class="hire-btn" onclick="hireStaff('${sp.id}')" ${active?'disabled':''}>
+          ${active ? '雇用中' : `¥${sp.salary}/日`}
+        </button>` :
+        `<span style="font-size:9px;color:var(--gold)">オーナー</span>`
+      }
+    </div>`;
+  });
+  inner.innerHTML = html;
+}
+
+function hireStaff(id) {
+  const sp = STAFF_POOL.find(sp=>sp.id===id);
+  if (!sp || G.money < sp.salary) { showBanner('💰 資金不足！'); return; }
+  G.money -= sp.salary;
+  sp.hired = true;
+  const ns = { staffId:id, x:50+Math.random()*50, y:50+Math.random()*30, state:'idle', target:null, carry:null, fatigue:0, el:null, statusEl:null };
+  G.staff.push(ns);
+  spawnCharEl(ns);
+  addLog(`👤 ${sp.name} を雇用した`);
+  showBanner(`👤 ${sp.name} がチームに加わった！`);
+  renderStaffPanel(document.getElementById('slide-panel-inner'));
+  updateUI();
+}
+
+// ====================================================
+//  UI: LOG
+// ====================================================
+function addLog(msg) {
+  G.eventLog.unshift({ msg, day:`${G.year}年${G.day}日` });
+  if (G.eventLog.length > 30) G.eventLog.pop();
+}
+
+function renderLogPanel(inner) {
+  let html = `<div class="panel-section-title">経営ログ</div>`;
+  if (!G.eventLog.length) { inner.innerHTML = html + '<div style="font-size:10px;color:#8a7060;padding:8px">まだログがない。</div>'; return; }
+  G.eventLog.forEach(e => {
+    html += `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:10px">
+      <span style="color:#8a7060;font-size:8px">${e.day}</span> ${e.msg}
+    </div>`;
+  });
+  inner.innerHTML = html;
+}
+
+// ====================================================
+//  TOOL BUTTONS
+// ====================================================
+function toggleTool(tool) {
+  if (G.activeTool === tool) {
+    G.activeTool = null;
+    document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+    G.selectedBldId = null;
+  } else {
+    G.activeTool = tool;
+    G.selectedBldId = null;
+    closeDetailPanel();
+    document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById(`tool-${tool}`)?.classList.add('active');
+    showBanner(tool === 'remove' ? '🗑️ 撤去するタイルをタップ' : '✋ 移動モード（未実装）');
+  }
+}
+
+// ====================================================
+//  MODAL
+// ====================================================
+function openModal(title, body) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ====================================================
+//  BANNER
+// ====================================================
 function showBanner(text) {
-  const el = $('event-banner');
+  const el = document.getElementById('event-banner');
   el.textContent = text;
   el.classList.remove('show');
   void el.offsetWidth;
@@ -688,782 +1535,67 @@ function showBanner(text) {
   el.addEventListener('animationend', () => el.classList.remove('show'), { once: true });
 }
 
-// =====================================================
-//  FIELD RENDERING
-// =====================================================
-function buildField() {
-  const field = $('field');
-  field.style.gridTemplateColumns = `repeat(${GRID_COLS}, 1fr)`;
-  field.innerHTML = '';
+// ====================================================
+//  DRAG-TO-PAN
+// ====================================================
+let panStart = null, panOriginX = 0, panOriginY = 0;
+let panOffX = 0, panOffY = 0;
 
-  const vw = window.innerWidth;
-  const availW = vw - 16;
-  const tileSize = Math.floor(availW / GRID_COLS);
-  field.style.width = (tileSize * GRID_COLS + (GRID_COLS - 1) * 3) + 'px';
-
-  for (let i = 0; i < TOTAL_TILES; i++) {
-    const tile = document.createElement('div');
-    tile.className = 'tile';
-    tile.dataset.index = i;
-    tile.style.width = tileSize + 'px';
-    tile.style.minWidth = tileSize + 'px';
-    tile.style.minHeight = tileSize + 'px';
-    tile.addEventListener('pointerdown', onTileDown);
-    field.appendChild(tile);
-  }
-  renderTiles();
-}
-
-function renderTiles() {
-  const tiles = document.querySelectorAll('.tile');
-  tiles.forEach((el, i) => {
-    const t = state.tiles[i];
-    el.innerHTML = '';
-    el.className = 'tile';
-
-    if (t.facility) {
-      el.classList.add('facility');
-      const fac = FACILITIES.find(f => f.id === t.facility);
-      if (fac) {
-        const span = document.createElement('span');
-        span.className = 'tile-emoji';
-        span.textContent = fac.emoji;
-        el.appendChild(span);
-      }
-    } else if (t.type === 'empty') {
-      el.classList.add('empty');
-    } else if (t.type === 'soil') {
-      el.classList.add('soil');
-    } else if (t.type === 'growing') {
-      el.classList.add('growing');
-      const m = MUSHROOMS.find(m => m.id === t.mushroom);
-      if (m) {
-        const span = document.createElement('span');
-        span.className = 'tile-emoji';
-        span.textContent = m.emoji;
-        span.style.opacity = 0.5 + t.progress / 200;
-        span.style.fontSize = (10 + t.progress / 8) + 'px';
-        el.appendChild(span);
-        const bar = document.createElement('div');
-        bar.className = 'progress-bar';
-        const fill = document.createElement('div');
-        fill.className = 'progress-fill';
-        fill.style.width = t.progress + '%';
-        bar.appendChild(fill);
-        el.appendChild(bar);
-      }
-    } else if (t.type === 'ready') {
-      el.classList.add('ready');
-      const m = MUSHROOMS.find(m => m.id === t.mushroom);
-      if (m) {
-        const span = document.createElement('span');
-        span.className = 'tile-emoji';
-        span.textContent = m.emoji;
-        el.appendChild(span);
-        // check combo
-        const comboLabel = getComboLabel(i);
-        if (comboLabel) {
-          const badge = document.createElement('div');
-          badge.className = 'combo-badge';
-          badge.textContent = comboLabel;
-          el.appendChild(badge);
-        }
-      }
-    }
-  });
-}
-
-// =====================================================
-//  COMBO SYSTEM
-// =====================================================
-function getAdjacentFacilities(idx) {
-  const row = Math.floor(idx / GRID_COLS);
-  const col = idx % GRID_COLS;
-  const facIds = [];
-  [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => {
-    const nr = row + dr;
-    const nc = col + dc;
-    if (nr >= 0 && nr < GRID_ROWS && nc >= 0 && nc < GRID_COLS) {
-      const ni = nr * GRID_COLS + nc;
-      if (state.tiles[ni].facility) facIds.push(state.tiles[ni].facility);
-    }
-  });
-  return facIds;
-}
-
-function getComboLabel(idx) {
-  const t = state.tiles[idx];
-  if (!t.mushroom) return null;
-  const facIds = getAdjacentFacilities(idx);
-  for (const combo of COMBOS) {
-    if ((facIds.includes(combo.a) && t.mushroom === combo.b) ||
-        (facIds.includes(combo.b) && t.mushroom === combo.a)) {
-      return combo.label;
-    }
-  }
-  return null;
-}
-
-function getComboMultiplier(idx, bonusType) {
-  const t = state.tiles[idx];
-  if (!t.mushroom) return 1;
-  const facIds = getAdjacentFacilities(idx);
-  let mult = 1;
-  for (const combo of COMBOS) {
-    if (combo.bonus === bonusType) {
-      if ((facIds.includes(combo.a) && t.mushroom === combo.b) ||
-          (facIds.includes(combo.b) && t.mushroom === combo.a)) {
-        mult *= combo.mult;
-        state.comboCount++;
-      }
-    }
-  }
-  const researchBonus = state.researchProjects.find(r => r.id === 'combo1' && r.done) ? 1.2 : 1;
-  return mult * researchBonus;
-}
-
-// =====================================================
-//  TILE INTERACTION
-// =====================================================
-let isSwiping = false;
-let swipeHarvested = new Set();
-
-function onTileDown(e) {
-  const idx = parseInt(e.target.closest('.tile').dataset.index);
-  isSwiping = true;
-  swipeHarvested.clear();
-  handleTile(idx, e);
-}
+document.getElementById('iso-scroll').addEventListener('pointerdown', (e) => {
+  if (e.target.closest('.iso-tile') || e.target.closest('.bld-sprite') || e.target.closest('.character')) return;
+  panStart = { x: e.clientX, y: e.clientY };
+  panOriginX = panOffX;
+  panOriginY = panOffY;
+}, { passive: true });
 
 document.addEventListener('pointermove', (e) => {
-  if (!isSwiping) return;
-  const el = document.elementFromPoint(e.clientX, e.clientY);
-  if (!el) return;
-  const tile = el.closest('.tile');
-  if (!tile) return;
-  const idx = parseInt(tile.dataset.index);
-  if (!swipeHarvested.has(idx)) {
-    const t = state.tiles[idx];
-    if (t.type === 'ready') {
-      swipeHarvested.add(idx);
-      handleTile(idx, e);
-    }
-  }
+  if (!panStart) return;
+  const dx = e.clientX - panStart.x;
+  const dy = e.clientY - panStart.y;
+  if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+  panOffX = panOriginX + dx;
+  panOffY = panOriginY + dy;
+  document.getElementById('iso-stage').style.transform =
+    `translate(${stageOffX + panOffX}px, ${stageOffY + panOffY}px)`;
 });
 
-document.addEventListener('pointerup', () => { isSwiping = false; swipeHarvested.clear(); });
+document.addEventListener('pointerup', () => { panStart = null; });
 
-function handleTile(idx, e) {
-  const t = state.tiles[idx];
-  const rect = e.target.closest('.tile').getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-
-  if (t.type === 'ready') {
-    harvestTile(idx, cx, cy);
-    return;
-  }
-
-  const action = state.selectedAction;
-  if (!action) return;
-
-  if (action === 'plant') {
-    const m = state.selectedMushroom;
-    if (m.event) return;
-    if (t.type !== 'empty' && t.type !== 'soil') return;
-    if (state.money < m.cost) { showBanner('💰 お金が足りない！'); return; }
-    state.money -= m.cost;
-    t.type = 'growing';
-    t.mushroom = m.id;
-    t.progress = 0;
-    t.ready = false;
-    renderTiles();
-    updateUI();
-    spawnParticle(cx, cy - 20, '🌱', 'green');
-  } else if (action === 'facility') {
-    const fac = state.selectedFacility;
-    if (t.type !== 'empty' && t.type !== 'soil') return;
-    if (state.money < fac.cost) { showBanner('💰 お金が足りない！'); return; }
-    state.money -= fac.cost;
-    t.type = 'facility';
-    t.facility = fac.id;
-    t.mushroom = null;
-    state.facilities[idx] = fac.id;
-    renderTiles();
-    updateUI();
-    spawnParticle(cx, cy - 20, '🏗️', 'gold');
-    showBanner(`🏗️ ${fac.name} を建設した！`);
-  } else if (action === 'remove') {
-    if (t.facility) {
-      t.type = 'empty';
-      t.facility = null;
-      delete state.facilities[idx];
-    } else if (t.type === 'growing' || t.type === 'soil') {
-      t.type = 'empty';
-      t.mushroom = null;
-      t.progress = 0;
-    }
-    renderTiles();
-  } else if (action === 'mist') {
-    if (t.type === 'growing') {
-      if (state.money < 20) { showBanner('💰 お金が足りない！'); return; }
-      state.money -= 20;
-      t.progress = Math.min(100, t.progress + 30);
-      if (t.progress >= 100) {
-        t.type = 'ready';
-        t.ready = true;
-      }
-      renderTiles();
-      updateUI();
-      spawnParticle(cx, cy - 20, '💧', 'green');
-    }
-  }
+// ====================================================
+//  MAIN LOOP
+// ====================================================
+function gameLoop() {
+  updateYields();
+  updateCharacters();
+  dayTick();
 }
 
-function harvestTile(idx, cx, cy) {
-  const t = state.tiles[idx];
-  if (t.type !== 'ready') return;
-  const m = MUSHROOMS.find(m => m.id === t.mushroom);
-  if (!m) return;
-
-  let val = m.value;
-  let rp = m.rp;
-
-  // Research bonuses
-  if (state.researchProjects.find(r => r.id === 'value1' && r.done)) val = Math.floor(val * 1.1);
-  if (state.researchProjects.find(r => r.id === 'speedup1' && r.done)) rp = Math.floor(rp * 1.1);
-
-  // Weather bonus
-  val = Math.floor(val * state.weather.growMult);
-
-  // Combo
-  val = Math.floor(val * getComboMultiplier(idx, 'value'));
-  rp = Math.floor(rp * getComboMultiplier(idx, 'rp'));
-
-  // Satisfaction bonus
-  val = Math.floor(val * (1 + state.stats.satisfaction / 200));
-
-  state.money += val;
-  state.stats.harvest++;
-  state.stats.research += rp;
-  state.stats.income += val;
-  state.totalIncome += val;
-  state.encyclopedia.add(m.id);
-
-  t.type = 'soil';
-  t.mushroom = null;
-  t.progress = 0;
-  t.ready = false;
-
-  renderTiles();
-  updateUI();
-
-  spawnParticle(cx, cy - 20, '+$' + val, 'gold');
-  spawnParticle(cx + 20, cy - 30, 'RP+' + rp, 'green');
-  spawnBurst(cx, cy, m.emoji, 6);
-}
-
-// =====================================================
-//  GAME TICK
-// =====================================================
-function gameTick() {
-  state.tickCount++;
-  const growBase = state.weather.growMult;
-  const speedBonus = state.researchProjects.find(r => r.id === 'speedup1' && r.done) ? 1.1 : 1;
-  const grenBonus = Object.values(state.facilities).includes('greenhouse') ? 1.2 : 1;
-  const potBonus = state.potionActive ? 2.0 : 1.0;
-
-  state.tiles.forEach((t, idx) => {
-    if (t.type !== 'growing') return;
-    const m = MUSHROOMS.find(m => m.id === t.mushroom);
-    if (!m) return;
-
-    let speed = (100 / m.growTime) * growBase * speedBonus * grenBonus * potBonus;
-
-    // Combo speed
-    speed *= getComboMultiplier(idx, 'growSpeed');
-
-    // Weather storm penalty
-    if (state.weather.id === 'storm') speed *= 0.5;
-
-    t.progress = Math.min(100, t.progress + speed * 0.5);
-    if (t.progress >= 100) {
-      t.type = 'ready';
-      t.ready = true;
-    }
-  });
-
-  // Potion timer
-  if (state.potionActive) {
-    state.potionTimer--;
-    if (state.potionTimer <= 0) { state.potionActive = false; showBanner('⚗️ 成長薬の効果が切れた'); }
-  }
-
-  // Weather change
-  state.weatherTimer++;
-  if (state.weatherTimer > 60 + Math.random() * 60) {
-    state.weatherTimer = 0;
-    const newW = WEATHER_LIST[Math.floor(Math.random() * WEATHER_LIST.length)];
-    if (newW.id !== state.weather.id) {
-      state.weather = newW;
-      $('weather-display').textContent = newW.label;
-      if (newW.id === 'fog') triggerFogEvent();
-    }
-  }
-
-  // Day advance
-  if (state.tickCount % 120 === 0) {
-    state.day++;
-    if (state.day > 30) { state.day = 1; state.year++; }
-    // Visitor RP bonus
-    state.stats.research += Math.floor(state.stats.satisfaction / 20);
-    // Research progress
-    state.researchProjects.forEach(r => {
-      if (!r.done) r.progress = Math.min(r.required, r.progress + state.stats.research * 0.01);
-    });
-  }
-
-  // Visitor spawn
-  state.visitorTimer++;
-  const visitorRate = state.researchProjects.find(r => r.id === 'visitor1' && r.done) ? 30 : 40;
-  if (state.visitorTimer > visitorRate) {
-    state.visitorTimer = 0;
-    spawnVisitor();
-  }
-
-  // Random events
-  if (state.tickCount % 300 === 0 && Math.random() < 0.15) {
-    triggerRandomEvent();
-  }
-
-  // Satisfaction drift
-  const benchCount = Object.values(state.facilities).filter(f => f === 'bench').length;
-  const teaCount = Object.values(state.facilities).filter(f => f === 'teahouse').length;
-  const satBonus = benchCount * 10 + teaCount * 25;
-  const targetSat = Math.min(100, 30 + satBonus + state.stats.harvest * 0.1);
-  state.stats.satisfaction += (targetSat - state.stats.satisfaction) * 0.01;
-
-  // Cooldown tick
-  Object.keys(state.magicCooldowns).forEach(k => {
-    if (state.magicCooldowns[k] > 0) state.magicCooldowns[k]--;
-  });
-
-  renderTiles();
-  updateUI();
-}
-
-// =====================================================
-//  EVENTS
-// =====================================================
-function triggerFogEvent() {
-  if (state.fogEventActive) return;
-  state.fogEventActive = true;
-  showBanner('🌫️ 幻想郷の霧！ 幻のキノコが育ちやすい...');
-  const overlay = $('fog-overlay');
-  overlay.classList.add('active');
-
-  // Spawn phantom mushrooms
-  const emptyTiles = state.tiles.map((t,i) => i).filter(i => state.tiles[i].type === 'empty');
-  const count = Math.min(3, emptyTiles.length);
-  for (let c = 0; c < count; c++) {
-    const idx = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
-    if (state.tiles[idx].type === 'empty') {
-      state.tiles[idx].type = 'growing';
-      state.tiles[idx].mushroom = 'phantom';
-      state.tiles[idx].progress = 0;
-    }
-  }
-
-  setTimeout(() => {
-    overlay.classList.remove('active');
-    state.fogEventActive = false;
-    state.weather = WEATHER_LIST[0];
-    $('weather-display').textContent = WEATHER_LIST[0].label;
-  }, 15000);
-}
-
-function triggerRandomEvent() {
-  const events = [
-    () => {
-      // Master Spark
-      showBanner('💥 マスタースパーク！ キノコが焼きキノコに！');
-      const overlay = $('spark-overlay');
-      overlay.classList.remove('active');
-      void overlay.offsetWidth;
-      overlay.classList.add('active');
-      state.tiles.forEach(t => {
-        if (t.type === 'ready' || t.type === 'growing') {
-          t.mushroom = 'crispy';
-          t.type = 'ready';
-          t.progress = 100;
-        }
-      });
-      setTimeout(() => overlay.classList.remove('active'), 2000);
-    },
-    () => {
-      showBanner('✨ 突然変異！ ランダムなキノコが進化した！');
-      const growingTiles = state.tiles.filter(t => t.type === 'growing' || t.type === 'ready');
-      if (growingTiles.length > 0) {
-        const t = growingTiles[Math.floor(Math.random() * growingTiles.length)];
-        const higherM = MUSHROOMS.filter(m => !m.event && MUSHROOMS.indexOf(m) > 2);
-        if (higherM.length > 0) t.mushroom = higherM[Math.floor(Math.random() * higherM.length)].id;
-      }
-    },
-    () => {
-      showBanner('🍄 胞子の嵐！ 空き地にキノコが自然発生！');
-      const empty = state.tiles.map((t,i) => i).filter(i => state.tiles[i].type === 'empty');
-      const cnt = Math.min(4, empty.length);
-      const baseMushrooms = MUSHROOMS.filter(m => !m.event);
-      for (let c = 0; c < cnt; c++) {
-        if (empty.length === 0) break;
-        const ri = Math.floor(Math.random() * empty.length);
-        const idx = empty.splice(ri, 1)[0];
-        const m = baseMushrooms[Math.floor(Math.random() * Math.min(3, baseMushrooms.length))];
-        state.tiles[idx].type = 'growing';
-        state.tiles[idx].mushroom = m.id;
-        state.tiles[idx].progress = Math.random() * 50;
-      }
-    }
-  ];
-  events[Math.floor(Math.random() * events.length)]();
-}
-
-// =====================================================
-//  VISITOR
-// =====================================================
-function spawnVisitor() {
-  const v = VISITORS[Math.floor(Math.random() * VISITORS.length)];
-  const el = document.createElement('div');
-  el.className = 'visitor';
-  el.textContent = v.emoji;
-  el.style.bottom = (15 + Math.random() * 15) + '%';
-  $('main-area').appendChild(el);
-
-  // RP gain
-  const rp = v.rp + Math.floor(state.stats.satisfaction / 20);
-  state.stats.research += rp;
-  state.stats.satisfaction = Math.min(100, state.stats.satisfaction + 2);
-
-  el.addEventListener('animationend', () => el.remove());
-}
-
-// =====================================================
-//  UI UPDATE
-// =====================================================
-function updateUI() {
-  $('money-display').textContent = '$' + state.money.toLocaleString();
-  $('money-delta').textContent = '+$' + Math.floor(state.stats.income);
-  state.stats.income *= 0.95;
-  $('date-display').textContent = `${state.year}年目 ${state.day}日`;
-  $('stat-harvest').textContent = state.stats.harvest;
-  $('stat-research').textContent = Math.floor(state.stats.research);
-  $('stat-satisfaction').textContent = Math.floor(state.stats.satisfaction) + '%';
-  $('stat-encyclopedia').textContent = state.encyclopedia.size + '/' + MUSHROOMS.length;
-  $('stat-combo').textContent = state.comboCount;
-}
-
-// =====================================================
-//  TAB SYSTEM
-// =====================================================
-function renderTabContent() {
-  const tab = state.activeTab;
-  const container = $('tab-content');
-  container.innerHTML = '';
-
-  if (tab === 'plant') {
-    // Select action
-    ['plant', 'remove'].forEach(a => {
-      const btn = document.createElement('button');
-      btn.className = 'action-btn' + (state.selectedAction === a ? ' selected' : '');
-      btn.innerHTML = `<span class="btn-icon">${a === 'plant' ? '🌱' : '🗑️'}</span><span class="btn-name">${a === 'plant' ? '種まき' : '撤去'}</span>`;
-      btn.onclick = () => { state.selectedAction = a; renderTabContent(); };
-      container.appendChild(btn);
-    });
-
-    // Divider
-    const div = document.createElement('div');
-    div.style.cssText = 'width:1px;background:var(--brown-light);flex-shrink:0;margin:0 4px';
-    container.appendChild(div);
-
-    // Mushroom selection
-    const unlocked = MUSHROOMS.filter(m => !m.event && state.totalIncome >= m.unlock);
-    unlocked.forEach(m => {
-      const btn = document.createElement('button');
-      btn.className = 'action-btn' + (state.selectedMushroom?.id === m.id && state.selectedAction === 'plant' ? ' selected' : '');
-      btn.innerHTML = `<span class="btn-icon">${m.emoji}</span><span class="btn-name">${m.name}</span><span class="btn-cost">$${m.cost}</span>`;
-      btn.onclick = () => {
-        state.selectedMushroom = m;
-        state.selectedAction = 'plant';
-        renderTabContent();
-      };
-      container.appendChild(btn);
-    });
-
-  } else if (tab === 'facility') {
-    state.selectedAction = 'facility';
-    FACILITIES.forEach(fac => {
-      const btn = document.createElement('button');
-      btn.className = 'action-btn' + (state.selectedFacility?.id === fac.id ? ' selected' : '');
-      btn.innerHTML = `<span class="btn-icon">${fac.emoji}</span><span class="btn-name">${fac.name}</span><span class="btn-cost">$${fac.cost}</span>`;
-      btn.onclick = () => {
-        state.selectedFacility = fac;
-        state.selectedAction = 'facility';
-        renderTabContent();
-      };
-      container.appendChild(btn);
-    });
-
-  } else if (tab === 'magic') {
-    MAGIC_SKILLS.forEach(skill => {
-      const cd = state.magicCooldowns[skill.id] || 0;
-      const btn = document.createElement('button');
-      btn.className = 'action-btn' + (state.selectedMagic?.id === skill.id ? ' selected' : '');
-      btn.disabled = cd > 0;
-      btn.innerHTML = `<span class="btn-icon">${skill.emoji}</span><span class="btn-name">${skill.name}</span><span class="btn-cost">${cd > 0 ? 'CD:'+cd : '$'+skill.cost}</span>`;
-      btn.onclick = () => {
-        if (cd > 0) return;
-        useMagic(skill);
-        renderTabContent();
-      };
-      container.appendChild(btn);
-    });
-
-  } else if (tab === 'menu') {
-    state.selectedAction = null;
-    const menuItems = [
-      { icon: '📖', label: '図鑑', action: openEncyclopedia },
-      { icon: '🔬', label: '研究', action: openResearch },
-      { icon: '🏆', label: '実績', action: openAchievements },
-      { icon: '⚙️', label: '設定', action: openSettings },
-    ];
-    menuItems.forEach(item => {
-      const btn = document.createElement('button');
-      btn.className = 'action-btn';
-      btn.innerHTML = `<span class="btn-icon">${item.icon}</span><span class="btn-name">${item.label}</span>`;
-      btn.onclick = item.action;
-      container.appendChild(btn);
-    });
-  }
-}
-
-// =====================================================
-//  MAGIC SKILLS
-// =====================================================
-function useMagic(skill) {
-  if (state.money < skill.cost && skill.id !== 'harvest_all') {
-    showBanner('💰 お金が足りない！'); return;
-  }
-
-  state.magicCooldowns[skill.id] = skill.cooldown;
-
-  if (skill.id === 'mist') {
-    state.selectedAction = 'mist';
-    state.selectedMagic = skill;
-    showBanner('💨 霧を吹きかけるタイルを選べ！');
-  } else if (skill.id === 'potion') {
-    state.money -= skill.cost;
-    state.potionActive = true;
-    state.potionTimer = 40;
-    showBanner('⚗️ 成長薬を散布！ 成長速度2倍！');
-  } else if (skill.id === 'spark') {
-    state.money -= skill.cost;
-    const overlay = $('spark-overlay');
-    overlay.classList.remove('active');
-    void overlay.offsetWidth;
-    overlay.classList.add('active');
-    state.tiles.forEach(t => {
-      if (t.type === 'growing') {
-        if (Math.random() < 0.3) {
-          t.mushroom = 'crispy';
-          t.type = 'ready';
-          t.progress = 100;
-        } else {
-          t.progress = Math.max(0, t.progress - 10);
-        }
-      }
-    });
-    setTimeout(() => overlay.classList.remove('active'), 1500);
-    showBanner('⚡ スパーク発動！ 制御不能な魔力！');
-  } else if (skill.id === 'harvest_all') {
-    state.money -= skill.cost;
-    let count = 0;
-    state.tiles.forEach((t, idx) => {
-      if (t.type === 'ready') {
-        const rect = document.querySelectorAll('.tile')[idx]?.getBoundingClientRect();
-        if (rect) harvestTile(idx, rect.left + rect.width/2, rect.top + rect.height/2);
-        count++;
-      }
-    });
-    showBanner(`🌀 全収穫！ ${count}個のキノコを回収！`);
-  }
-}
-
-// =====================================================
-//  MODALS
-// =====================================================
-function openEncyclopedia() {
-  $('modal-title').textContent = '📖 キノコ図鑑';
-  let html = '<div class="modal-section">';
-  MUSHROOMS.forEach(m => {
-    const found = state.encyclopedia.has(m.id) || m.event;
-    html += `<div class="enc-item ${found ? '' : 'enc-locked'}">
-      <span class="enc-icon">${found ? m.emoji : '❓'}</span>
-      <div class="enc-info">
-        <div class="enc-name">${found ? m.name : '???'}</div>
-        <div class="enc-desc">${found ? m.desc : '未発見'}</div>
-      </div>
-      ${found ? `<span style="color:var(--gold);font-size:10px">$${m.value}</span>` : ''}
-    </div>`;
-  });
-  html += '</div>';
-  $('modal-body').innerHTML = html;
-  $('modal-overlay').classList.add('open');
-}
-
-function openResearch() {
-  $('modal-title').textContent = '🔬 研究室';
-  let html = `<div style="font-size:11px;color:#c4a882;margin-bottom:8px">研究P: ${Math.floor(state.stats.research)}</div>`;
-  state.researchProjects.forEach(r => {
-    const pct = Math.min(100, (r.progress / r.required) * 100);
-    html += `<div class="research-item">
-      <div class="research-title">${r.done ? '✅' : '🔬'} ${r.name}</div>
-      <div class="research-desc">${r.desc}</div>
-      <div class="research-progress"><div class="research-fill" style="width:${pct}%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#8a7060">
-        <span>${Math.floor(r.progress)} / ${r.required} RP</span>
-        <span>${r.done ? '完了' : Math.floor(pct) + '%'}</span>
-      </div>
-      ${!r.done ? `<button class="buy-btn" style="margin-top:4px" onclick="investResearch('${r.id}')" ${state.stats.research < 50 ? 'disabled' : ''}>RP50を投入</button>` : ''}
-    </div>`;
-  });
-  $('modal-body').innerHTML = html;
-  $('modal-overlay').classList.add('open');
-}
-
-function investResearch(id) {
-  const r = state.researchProjects.find(r => r.id === id);
-  if (!r || r.done || state.stats.research < 50) return;
-  state.stats.research -= 50;
-  r.progress = Math.min(r.required, r.progress + 50);
-  if (r.progress >= r.required) {
-    r.done = true;
-    showBanner(`✅ 研究完了：${r.name}！ ${r.desc}`);
-  }
-  openResearch();
-}
-
-function openAchievements() {
-  $('modal-title').textContent = '🏆 実績';
-  const achievements = [
-    { icon: '🍄', name: '初収穫',          done: state.stats.harvest >= 1,    desc: '初めてキノコを収穫した' },
-    { icon: '💰', name: '百万長者',         done: state.totalIncome >= 1000000,desc: '総収益100万$達成' },
-    { icon: '🏗️', name: '建設王',           done: Object.keys(state.facilities).length >= 5, desc: '5つの施設を建てた' },
-    { icon: '📖', name: '図鑑コンプリート', done: state.encyclopedia.size >= 10,desc: '10種のキノコを発見' },
-    { icon: '⚡', name: '魔法使い見習い',   done: state.comboCount >= 10,       desc: 'コンボを10回発動' },
-    { icon: '🌫️', name: '霧の目撃者',       done: state.encyclopedia.has('phantom'), desc: '幻のキノコを発見' },
-    { icon: '🔥', name: 'スパーク被害者',   done: state.encyclopedia.has('crispy'),  desc: '焼きキノコを経験' },
-    { icon: '🌈', name: '虹の守護者',       done: state.encyclopedia.has('rainbow'), desc: '虹キノコを育てた' },
-  ];
-  let html = '<div class="modal-section">';
-  achievements.forEach(a => {
-    html += `<div class="modal-item">
-      <div class="modal-item-info">
-        <span style="font-size:20px;${a.done ? '' : 'filter:grayscale(1);opacity:0.4'}">${a.icon}</span>
-        <div>
-          <div style="font-weight:bold;${a.done ? 'color:var(--gold)' : 'color:#8a7060'}">${a.name}</div>
-          <div style="font-size:10px;color:#8a7060">${a.desc}</div>
-        </div>
-      </div>
-      <span>${a.done ? '✅' : '🔒'}</span>
-    </div>`;
-  });
-  html += '</div>';
-  $('modal-body').innerHTML = html;
-  $('modal-overlay').classList.add('open');
-}
-
-function openSettings() {
-  $('modal-title').textContent = '⚙️ 設定・情報';
-  const html = `
-    <div class="modal-section">
-      <h3>ゲーム情報</h3>
-      <div class="modal-item"><span>総収益</span><span style="color:var(--gold)">$${state.totalIncome.toLocaleString()}</span></div>
-      <div class="modal-item"><span>経過日数</span><span>${(state.year-1)*30 + state.day}日</span></div>
-      <div class="modal-item"><span>収穫数</span><span>${state.stats.harvest}</span></div>
-      <div class="modal-item"><span>コンボ数</span><span>${state.comboCount}</span></div>
-    </div>
-    <div class="modal-section">
-      <h3>コンボ一覧</h3>
-      ${COMBOS.map(c => {
-        const fa = FACILITIES.find(f => f.id === c.a);
-        const fb = FACILITIES.find(f => f.id === c.b) || MUSHROOMS.find(m => m.id === c.b);
-        return `<div class="modal-item">
-          <span>${fa?.emoji||'?'} × ${fb?.emoji||'?'}</span>
-          <span style="color:var(--green-light)">${c.label}</span>
-        </div>`;
-      }).join('')}
-    </div>
-    <div class="modal-section">
-      <h3>操作ガイド</h3>
-      <div style="font-size:10px;color:#c4a882;line-height:1.6">
-        🌱 種まきタブ → タイルをタップで植える<br>
-        🏗️ 施設タブ → タイルをタップで建設<br>
-        ✨ 成熟したキノコはスワイプで連続収穫！<br>
-        🔬 研究室でRPを投入して強化しよう<br>
-        ⚡ コンボは施設の隣にキノコを育てて発動
-      </div>
-    </div>
-  `;
-  $('modal-body').innerHTML = html;
-  $('modal-overlay').classList.add('open');
-}
-
-function closeModal() {
-  $('modal-overlay').classList.remove('open');
-}
-
-$('modal-overlay').addEventListener('click', (e) => {
-  if (e.target === $('modal-overlay')) closeModal();
-});
-
-// =====================================================
-//  TAB BUTTONS
-// =====================================================
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.activeTab = btn.dataset.tab;
-    state.selectedAction = null;
-    renderTabContent();
-  });
-});
-
-// =====================================================
+// ====================================================
 //  INIT
-// =====================================================
-buildField();
-renderTabContent();
-updateUI();
+// ====================================================
+function init() {
+  initStage();
+  buildGrid();
+  initCharacters();
 
-// Place a few starter tiles
-[14, 15, 26, 27].forEach(idx => {
-  state.tiles[idx].type = 'growing';
-  state.tiles[idx].mushroom = 'common';
-  state.tiles[idx].progress = Math.random() * 50;
-});
-renderTiles();
+  // Place starter buildings
+  setTimeout(() => {
+    placeBuild('collection_box', 4, 4);
+    placeBuild('shelf_nameko', 3, 4);
+    placeBuild('path', 4, 3);
+    placeBuild('water_channel', 2, 4);
+    updateCombos();
 
-// Start game loop
-setInterval(gameTick, 500);
-setInterval(renderTabContent, 2000);
+    addLog('🌿 霧雨魔法キノコ園 開業！');
+    showBanner('🍄 霧雨魔法キノコ園へようこそ！左のメニューから建設を始めよう！');
+  }, 300);
 
-// Welcome
-setTimeout(() => {
-  showBanner('🍄 霧雨魔法キノコ園へようこそ！');
-}, 1000);
+  setInterval(gameLoop, TICK_MS);
+  updateUI();
+}
 
-window.addEventListener('resize', buildField);
+window.addEventListener('resize', () => { initStage(); });
+window.addEventListener('load', init);
 </script>
 </body>
 </html>
