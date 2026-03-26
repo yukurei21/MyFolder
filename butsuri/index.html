@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物理基礎 問題ジェネレーター</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --primary:#5c6ef8;--primary-dark:#4455e0;--primary-light:#eef0ff;
+  --success:#22c55e;--error:#ef4444;--warn:#f59e0b;
+  --text:#1e293b;--sub:#64748b;--border:#e2e8f0;--bg:#f1f5f9;
+}
+body{font-family:'Hiragino Sans','Meiryo','Yu Gothic',sans-serif;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);min-height:100vh;padding:16px;}
+.wrap{max-width:680px;margin:0 auto;}
+
+/* Header */
+.hd{text-align:center;color:#fff;padding:20px 0 16px;}
+.hd h1{font-size:clamp(1.3rem,4vw,1.9rem);font-weight:800;letter-spacing:-.5px;margin-bottom:6px;}
+.hd p{font-size:.88rem;opacity:.85;}
+
+/* Score bar */
+.score{display:flex;gap:10px;margin-bottom:14px;}
+.score-item{flex:1;background:rgba(255,255,255,.18);border-radius:14px;padding:10px 8px;text-align:center;color:#fff;backdrop-filter:blur(4px);}
+.score-item .val{font-size:1.5rem;font-weight:800;display:block;line-height:1;}
+.score-item .lbl{font-size:.72rem;opacity:.8;margin-top:3px;}
+
+/* Main card */
+.card{background:#fff;border-radius:22px;padding:24px;box-shadow:0 12px 48px rgba(0,0,0,.18);margin-bottom:14px;}
+
+/* Category filter */
+.cats{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px;}
+.cat-btn{padding:6px 13px;border:2px solid var(--border);border-radius:20px;background:#fff;color:var(--sub);cursor:pointer;font-size:.8rem;font-weight:700;transition:all .18s;white-space:nowrap;}
+.cat-btn:hover{border-color:var(--primary);color:var(--primary);}
+.cat-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+
+/* Start screen */
+.start{text-align:center;padding:20px 0;}
+.start p{color:var(--sub);margin-bottom:22px;font-size:.93rem;line-height:1.6;}
+.start-topics{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:24px;}
+.topic-tag{background:var(--primary-light);color:var(--primary);padding:4px 11px;border-radius:12px;font-size:.78rem;font-weight:600;}
+
+/* Question area */
+.q-area{display:none;}
+.q-area.on{display:block;}
+
+.q-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.q-cat{padding:4px 13px;border-radius:20px;font-size:.75rem;font-weight:800;letter-spacing:.3px;}
+.cat-運動{background:#dbeafe;color:#1d4ed8;}
+.cat-力と運動{background:#fce7f3;color:#9d174d;}
+.cat-エネルギー{background:#dcfce7;color:#15803d;}
+.cat-熱{background:#fff7ed;color:#c2410c;}
+.cat-波{background:#ede9fe;color:#6d28d9;}
+.cat-電気{background:#fef9c3;color:#854d0e;}
+.q-num{font-size:.8rem;color:var(--sub);font-weight:600;}
+
+.q-text{font-size:1rem;line-height:1.75;color:var(--text);margin-bottom:16px;}
+.q-text p{margin-bottom:6px;}
+
+.formula{background:var(--primary-light);border-left:4px solid var(--primary);padding:10px 15px;border-radius:0 10px 10px 0;margin:12px 0;font-size:1.05rem;color:var(--primary-dark);font-family:'Courier New',monospace;font-weight:600;}
+
+/* Options */
+.opts{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:18px;}
+.opt{display:flex;align-items:center;gap:11px;padding:12px 15px;border:2px solid var(--border);border-radius:13px;cursor:pointer;transition:all .17s;font-size:.93rem;line-height:1.5;color:var(--text);}
+.opt:hover{border-color:var(--primary);background:var(--primary-light);}
+.opt.sel{border-color:var(--primary);background:var(--primary-light);}
+.opt.ok{border-color:var(--success);background:#f0fdf4;}
+.opt.ng{border-color:var(--error);background:#fef2f2;}
+.opt-lbl{width:26px;height:26px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.78rem;flex-shrink:0;transition:all .17s;}
+.sel .opt-lbl{background:var(--primary);color:#fff;}
+.ok .opt-lbl{background:var(--success);color:#fff;}
+.ng .opt-lbl{background:var(--error);color:#fff;}
+
+/* Calc input */
+.calc-wrap{margin-bottom:18px;}
+.calc-lbl{font-size:.85rem;color:var(--sub);font-weight:600;margin-bottom:7px;display:block;}
+.calc-row{display:flex;gap:9px;}
+.calc-input{flex:1;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:1rem;outline:none;transition:border-color .2s;}
+.calc-input:focus{border-color:var(--primary);}
+.calc-unit{padding:11px 14px;background:var(--bg);border:2px solid var(--border);border-radius:12px;font-size:.88rem;color:var(--sub);font-weight:600;white-space:nowrap;}
+
+/* Buttons */
+.btn-main{width:100%;padding:13px;background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;border:none;border-radius:13px;font-size:1rem;font-weight:800;cursor:pointer;transition:opacity .18s;letter-spacing:.3px;}
+.btn-main:hover{opacity:.9;}
+.btn-main:disabled{opacity:.5;cursor:not-allowed;}
+.btn-next{width:100%;padding:13px;background:#fff;color:var(--primary);border:2.5px solid var(--primary);border-radius:13px;font-size:1rem;font-weight:800;cursor:pointer;transition:all .18s;letter-spacing:.3px;}
+.btn-next:hover{background:var(--primary-light);}
+
+/* Result */
+.result{display:none;margin-top:18px;padding-top:18px;border-top:2px solid var(--border);}
+.result.on{display:block;}
+.result-badge{text-align:center;font-size:1.35rem;font-weight:900;padding:13px;border-radius:13px;margin-bottom:14px;}
+.result-badge.ok{color:var(--success);background:#f0fdf4;}
+.result-badge.ng{color:var(--error);background:#fef2f2;}
+
+.expl{background:#f8faff;border-radius:13px;padding:16px;margin-bottom:16px;}
+.expl-title{font-size:.82rem;color:var(--primary);font-weight:800;margin-bottom:9px;display:flex;align-items:center;gap:5px;}
+.expl-body{font-size:.9rem;line-height:1.75;color:var(--text);}
+.expl-body .step{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:8px;font-family:'Courier New',monospace;font-size:.88rem;}
+
+@media(max-width:480px){
+  body{padding:10px;}
+  .card{padding:18px;}
+  .q-text{font-size:.95rem;}
+  .opt{font-size:.88rem;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd">
+    <h1>⚛️ 物理基礎 問題ジェネレーター</h1>
+    <p>高校物理基礎の全範囲・応用問題をランダム出題</p>
+  </div>
+
+  <div class="score">
+    <div class="score-item"><span class="val" id="s-cor">0</span><div class="lbl">✓ 正解</div></div>
+    <div class="score-item"><span class="val" id="s-inc">0</span><div class="lbl">✗ 不正解</div></div>
+    <div class="score-item"><span class="val" id="s-acc">—</span><div class="lbl">正答率</div></div>
+  </div>
+
+  <div class="card">
+    <div class="cats" id="cats">
+      <button class="cat-btn active" data-cat="all">すべて</button>
+      <button class="cat-btn" data-cat="運動">運動</button>
+      <button class="cat-btn" data-cat="力と運動">力と運動</button>
+      <button class="cat-btn" data-cat="エネルギー">エネルギー</button>
+      <button class="cat-btn" data-cat="熱">熱</button>
+      <button class="cat-btn" data-cat="波">波</button>
+      <button class="cat-btn" data-cat="電気">電気</button>
+    </div>
+
+    <!-- Start -->
+    <div class="start" id="start-area">
+      <div class="start-topics">
+        <span class="topic-tag">等加速度運動</span><span class="topic-tag">自由落下・投げ上げ</span>
+        <span class="topic-tag">F=ma</span><span class="topic-tag">慣性・摩擦</span>
+        <span class="topic-tag">運動量・力積</span><span class="topic-tag">フックの法則</span>
+        <span class="topic-tag">仕事・仕事率</span><span class="topic-tag">運動エネルギー</span>
+        <span class="topic-tag">力学的エネルギー保存</span><span class="topic-tag">比熱・熱量</span>
+        <span class="topic-tag">熱平衡</span><span class="topic-tag">v=fλ</span>
+        <span class="topic-tag">音速・ドップラー</span><span class="topic-tag">屈折・全反射</span>
+        <span class="topic-tag">オームの法則</span><span class="topic-tag">直列・並列回路</span>
+        <span class="topic-tag">電力・電力量</span><span class="topic-tag">電場・電位</span>
+      </div>
+      <p>分野を選んで「問題を生成」を押してください。<br>数値はランダムに変化します。</p>
+      <button class="btn-main" onclick="gen()">🎲 問題を生成</button>
+    </div>
+
+    <!-- Question -->
+    <div class="q-area" id="q-area">
+      <div class="q-head">
+        <span class="q-cat" id="q-cat-badge"></span>
+        <span class="q-num" id="q-num"></span>
+      </div>
+      <div class="q-text" id="q-text"></div>
+      <div id="ans-area"></div>
+      <button class="btn-main" id="sub-btn" onclick="submit()">✔ 答え合わせ</button>
+      <div class="result" id="result">
+        <div class="result-badge" id="r-badge"></div>
+        <div class="expl" id="expl"></div>
+        <button class="btn-next" onclick="gen()">次の問題へ →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Utilities ───────────────────────────────────────────────────────────────
+const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const rf=(a,b,d=1)=>parseFloat((Math.random()*(b-a)+a).toFixed(d));
+const sh=a=>{const r=[...a];for(let i=r.length-1;i>0;i--){const j=ri(0,i);[r[i],r[j]]=[r[j],r[i]];}return r;};
+const nice=(v,d=2)=>parseFloat(v.toFixed(d));
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let cur=null,qCount=0,cor=0,inc=0,answered=false,selIdx=-1,shuffOpts=[];
+let selCat='all';
+
+// ─── Problem Generators ──────────────────────────────────────────────────────
+const GEN=[
+
+  // ════════════ 運動 ════════════
+  {cat:'運動',fn(){
+    const v0=ri(0,20),a=ri(1,10),t=ri(1,8),v=v0+a*t;
+    return{type:'calc',q:`初速度 <b>${v0} m/s</b> で動いている物体が、一定の加速度 <b>${a} m/s²</b> で <b>${t} 秒</b> 間加速した。このときの速度は何 m/s か。`,
+    fm:'v = v₀ + at',unit:'m/s',ans:v,tol:0,
+    ex:`<b>等加速度直線運動の速度公式</b>を使います。<div class="step">v = v₀ + at = ${v0} + ${a} × ${t} = <b>${v} m/s</b></div>`};
+  }},
+  {cat:'運動',fn(){
+    const v0=ri(0,8),a=ri(1,5),t=ri(1,6),x=v0*t+0.5*a*t*t;
+    return{type:'calc',q:`初速度 <b>${v0} m/s</b>、加速度 <b>${a} m/s²</b> で <b>${t} 秒</b> 間動いた物体の移動距離は何 m か。`,
+    fm:'x = v₀t + ½at²',unit:'m',ans:x,tol:0,
+    ex:`<div class="step">x = v₀t + ½at² = ${v0}×${t} + ½×${a}×${t}² = ${v0*t} + ${0.5*a*t*t} = <b>${x} m</b></div>`};
+  }},
+  {cat:'運動',fn(){
+    const h=ri(5,80),g=10,v=nice(Math.sqrt(2*g*h));
+    return{type:'calc',q:`高さ <b>${h} m</b> から静かに落とした物体が地面に達したときの速さは何 m/s か。（g = 10 m/s²）`,
+    fm:'v² = 2gh',unit:'m/s',ans:v,tol:0.1,
+    ex:`<b>自由落下</b>：地面での速度を v、高さを h とすると<div class="step">v² = 2gh = 2×10×${h} = ${2*g*h}<br>v = √${2*g*h} ≈ <b>${v} m/s</b></div>`};
+  }},
+  {cat:'運動',fn(){
+    const v0=ri(10,40),g=10,H=v0*v0/(2*g);
+    return{type:'calc',q:`真上に初速度 <b>${v0} m/s</b> で投げ上げた物体の最高点の高さは何 m か。（g = 10 m/s²）`,
+    fm:'H = v₀² / (2g)',unit:'m',ans:H,tol:0,
+    ex:`最高点では速度＝0。力学的エネルギー保存または公式より<div class="step">H = v₀²/(2g) = ${v0}²/(2×10) = ${v0*v0}/20 = <b>${H} m</b></div>`};
+  }},
+  {cat:'運動',fn(){
+    const v0=ri(0,10),a=ri(2,8),x=ri(5,25),v2=v0*v0+2*a*x,v=nice(Math.sqrt(v2));
+    return{type:'calc',q:`初速度 <b>${v0} m/s</b>、加速度 <b>${a} m/s²</b> で <b>${x} m</b> 進んだ物体の速度は何 m/s か（小数第2位まで）。`,
+    fm:'v² = v₀² + 2ax',unit:'m/s',ans:v,tol:0.05,
+    ex:`<div class="step">v² = v₀² + 2ax = ${v0}² + 2×${a}×${x} = ${v0*v0} + ${2*a*x} = ${v2}<br>v = √${v2} ≈ <b>${v} m/s</b></div>`};
+  }},
+  {cat:'運動',fn(){
+    const r=rf(1,15,1),v=ri(2,20),a=nice(v*v/r);
+    return{type:'calc',q:`半径 <b>${r} m</b> の円周上を速さ <b>${v} m/s</b> で等速円運動している。向心加速度は何 m/s² か（小数第2位まで）。`,
+    fm:'a = v²/r',unit:'m/s²',ans:a,tol:0.05,
+    ex:`等速円運動では速度の大きさが一定でも、向きが変わるため加速度が生じます。<div class="step">a = v²/r = ${v}²/${r} = ${v*v}/${r} ≈ <b>${a} m/s²</b></div>この加速度は常に円の中心向きです。`};
+  }},
+  {cat:'運動',fn(){
+    const opts=['等速円運動では速度の大きさは一定だが、向きが変化するため加速度は 0 でない','等速円運動では速度も加速度もともに一定である','等速円運動の向心力は円の接線方向を向く','等速円運動では合力はつねに 0 である'];
+    return{type:'choice',q:`等速円運動に関する記述として正しいものはどれか。`,opts,ans:opts[0],
+    ex:`等速円運動では<br>・速さは一定だが<b>速度の向きが変化</b>する<br>・したがって<b>加速度は 0 ではない</b>（向心加速度が存在）<br>・向心力は<b>円の中心方向</b>（求心方向）を向く<br>・合力（向心力）≠ 0`};
+  }},
+
+  // ════════════ 力と運動 ════════════
+  {cat:'力と運動',fn(){
+    const m=ri(1,20),a=rf(1,12,1),F=nice(m*a,1);
+    return{type:'calc',q:`質量 <b>${m} kg</b> の物体に加速度 <b>${a} m/s²</b> を生じさせるのに必要な合力は何 N か。`,
+    fm:'F = ma',unit:'N',ans:F,tol:0.05,
+    ex:`<b>運動方程式</b>より<div class="step">F = ma = ${m} × ${a} = <b>${F} N</b></div>`};
+  }},
+  {cat:'力と運動',fn(){
+    const m=ri(1,20),a=ri(1,10),F=m*a;
+    return{type:'calc',q:`${F} N の合力を加えたとき ${a} m/s² の加速度が生じた。この物体の質量は何 kg か。`,
+    fm:'m = F/a',unit:'kg',ans:m,tol:0,
+    ex:`F = ma より<div class="step">m = F/a = ${F}/${a} = <b>${m} kg</b></div>`};
+  }},
+  {cat:'力と運動',fn(){
+    const mu_list=[0.1,0.2,0.3,0.4,0.5];
+    const mu=mu_list[ri(0,4)],m=ri(2,20),g=10,f=nice(mu*m*g,1);
+    return{type:'calc',q:`質量 <b>${m} kg</b> の物体が水平面上にある。動摩擦係数 <b>μ′ = ${mu}</b>、g = 10 m/s² のとき、物体にはたらく動摩擦力は何 N か。`,
+    fm:"f' = μ'N = μ'mg",unit:'N',ans:f,tol:0.05,
+    ex:`水平面上では垂直抗力 N = mg<div class="step">f′ = μ′N = μ′mg = ${mu} × ${m} × 10 = <b>${f} N</b></div>動摩擦力は運動方向と逆向きにはたらきます。`};
+  }},
+  {cat:'力と運動',fn(){
+    const k_list=[50,100,200,300,500,800];
+    const k=k_list[ri(0,5)],x=rf(0.02,0.25,2),F=nice(k*x,1);
+    return{type:'calc',q:`ばね定数 <b>${k} N/m</b> のばねを自然長から <b>${x} m</b> 伸ばした。ばねの弾性力の大きさは何 N か。`,
+    fm:'F = kx',unit:'N',ans:F,tol:0.05,
+    ex:`<b>フックの法則</b>より<div class="step">F = kx = ${k} × ${x} = <b>${F} N</b></div>弾性力の向きは変形を元に戻す方向（伸ばせば縮む方向）です。`};
+  }},
+  {cat:'力と運動',fn(){
+    const m=ri(1,15),v=ri(3,25),p=m*v;
+    return{type:'calc',q:`質量 <b>${m} kg</b> の物体が <b>${v} m/s</b> で運動している。この物体の運動量の大きさは何 kg·m/s か。`,
+    fm:'p = mv',unit:'kg·m/s',ans:p,tol:0,
+    ex:`<div class="step">p = mv = ${m} × ${v} = <b>${p} kg·m/s</b></div>運動量はベクトル量です。向きは速度と同じ方向です。`};
+  }},
+  {cat:'力と運動',fn(){
+    const m=ri(1,10),v0=ri(0,8),v=ri(v0+4,25),t=rf(0.5,5,1);
+    const F=nice(m*(v-v0)/t,1);
+    return{type:'calc',q:`質量 <b>${m} kg</b> の物体の速度が <b>${t} 秒</b> で <b>${v0} m/s</b> から <b>${v} m/s</b> に変化した。物体に加わった合力は何 N か（小数第1位まで）。`,
+    fm:'Ft = Δp = m(v−v₀)',unit:'N',ans:F,tol:0.1,
+    ex:`<b>力積と運動量変化の定理</b>より<div class="step">Ft = m(v−v₀)<br>F = m(v−v₀)/t = ${m}×(${v}−${v0})/${t} = ${m*(v-v0)}/${t} ≈ <b>${F} N</b></div>`};
+  }},
+  {cat:'力と運動',fn(){
+    const opts=['作用・反作用の法則：2 物体間の力は大きさが等しく向きが反対','作用・反作用の法則：2 物体にはたらく力の合力は必ず 0 になる','力のつり合い：1 つの物体にはたらく 2 力は大きさが等しく同一線上で逆向き','作用・反作用の法則：同一物体にはたらく 2 力であり、常に打ち消し合う'];
+    return{type:'choice',q:`ニュートンの第3法則（作用・反作用の法則）の正しい説明はどれか。`,opts,ans:opts[0],
+    ex:`<b>作用・反作用</b>：A が B に力を加えるとき、B も A に等大・逆向きの力を加える。<br>・<b>異なる物体</b>にはたらく（打ち消し合わない）<br>・力のつり合いは<b>同一物体</b>にはたらく2力が等大逆向きで一直線上にある状態`};
+  }},
+
+  // ════════════ エネルギー ════════════
+  {cat:'エネルギー',fn(){
+    const m=ri(1,20),v=ri(2,25),K=0.5*m*v*v;
+    return{type:'calc',q:`質量 <b>${m} kg</b> の物体が <b>${v} m/s</b> で運動している。運動エネルギーは何 J か。`,
+    fm:'K = ½mv²',unit:'J',ans:K,tol:0,
+    ex:`<div class="step">K = ½mv² = ½ × ${m} × ${v}² = ½ × ${m} × ${v*v} = <b>${K} J</b></div>`};
+  }},
+  {cat:'エネルギー',fn(){
+    const m=ri(1,50),h=ri(2,100),U=m*10*h;
+    return{type:'calc',q:`質量 <b>${m} kg</b> の物体が地面から高さ <b>${h} m</b> にある。重力による位置エネルギーは何 J か。（g = 10 m/s²）`,
+    fm:'U = mgh',unit:'J',ans:U,tol:0,
+    ex:`<div class="step">U = mgh = ${m} × 10 × ${h} = <b>${U} J</b></div>基準点（地面）からの高さで決まります。`};
+  }},
+  {cat:'エネルギー',fn(){
+    const F=ri(20,400),d=ri(2,50),W=F*d;
+    return{type:'calc',q:`${F} N の力を加えて物体を力の向きに <b>${d} m</b> 動かした。この力がした仕事は何 J か。`,
+    fm:'W = Fd',unit:'J',ans:W,tol:0,
+    ex:`<div class="step">W = Fd = ${F} × ${d} = <b>${W} J</b></div>力と変位が同方向のとき W は正です。`};
+  }},
+  {cat:'エネルギー',fn(){
+    const pairs=[[30,30],[30,60],[45,45],[60,60]];
+    const [theta,degList]=[[30,'√3/2 ≈ 0.866'],[60,'0.5']][ri(0,1)];
+    const cosVal=theta===30?Math.sqrt(3)/2:0.5;
+    const cosStr=theta===30?'cos30° = √3/2':'cos60° = 1/2';
+    const F=ri(20,200),d=ri(3,30),W=nice(F*d*cosVal,0);
+    return{type:'calc',q:`${F} N の力を水平から <b>${theta}°</b> の角度で加えながら水平に <b>${d} m</b> 引いた。力がした仕事は何 J か。（${cosStr}）`,
+    fm:'W = Fd cosθ',unit:'J',ans:W,tol:1,
+    ex:`<div class="step">W = Fd cosθ = ${F} × ${d} × cos${theta}° ≈ ${F} × ${d} × ${cosVal.toFixed(3)} ≈ <b>${W} J</b></div>`};
+  }},
+  {cat:'エネルギー',fn(){
+    const m=ri(1,15),h=ri(5,50),g=10,v=nice(Math.sqrt(2*g*h));
+    return{type:'calc',q:`摩擦のない斜面の高さ <b>${h} m</b> の点から質量 <b>${m} kg</b> の物体が静かに滑り出した。底面での速度は何 m/s か。（g = 10 m/s²）`,
+    fm:'mgh = ½mv²',unit:'m/s',ans:v,tol:0.05,
+    ex:`<b>力学的エネルギー保存の法則</b>より<div class="step">mgh = ½mv²（m は両辺で消える）<br>v = √(2gh) = √(2×10×${h}) = √${2*g*h} ≈ <b>${v} m/s</b></div>質量に依存しない点がポイントです。`};
+  }},
+  {cat:'エネルギー',fn(){
+    const k=ri(100,600),x=rf(0.05,0.30,2),U=nice(0.5*k*x*x,3);
+    return{type:'calc',q:`ばね定数 <b>${k} N/m</b> のばねを <b>${x} m</b> 縮めたとき、弾性ポテンシャルエネルギーは何 J か（小数第3位まで）。`,
+    fm:'U = ½kx²',unit:'J',ans:U,tol:0.005,
+    ex:`<div class="step">U = ½kx² = ½ × ${k} × ${x}² = ½ × ${k} × ${nice(x*x,4)} ≈ <b>${U} J</b></div>`};
+  }},
+  {cat:'エネルギー',fn(){
+    const m=ri(2,20),v0=ri(0,8),v=ri(v0+3,25),W=nice(0.5*m*(v*v-v0*v0),0);
+    return{type:'calc',q:`質量 <b>${m} kg</b> の物体の速度が <b>${v0} m/s</b> から <b>${v} m/s</b> になった。合力がした仕事は何 J か。`,
+    fm:'W = ½mv² − ½mv₀²',unit:'J',ans:W,tol:0,
+    ex:`<b>仕事と運動エネルギーの定理</b>：合力のした仕事＝運動エネルギーの変化<div class="step">W = ½×${m}×${v}² − ½×${m}×${v0}² = ${0.5*m*v*v} − ${0.5*m*v0*v0} = <b>${W} J</b></div>`};
+  }},
+  {cat:'エネルギー',fn(){
+    const W=ri(100,3000),t=ri(5,120),P=nice(W/t,1);
+    return{type:'calc',q:`${W} J の仕事を <b>${t} 秒</b> で行った。仕事率は何 W か（小数第1位まで）。`,
+    fm:'P = W/t',unit:'W',ans:P,tol:0.1,
+    ex:`<b>仕事率（パワー）</b>は単位時間当たりの仕事<div class="step">P = W/t = ${W}/${t} ≈ <b>${P} W</b></div>`};
+  }},
+
+  // ════════════ 熱 ════════════
+  {cat:'熱',fn(){
+    const names=['水','アルミニウム','鉄','銅'],cs=[4.2,0.90,0.45,0.38];
+    const i=ri(0,3),m=ri(50,500),dT=ri(10,80);
+    const Q=nice(m*cs[i]*dT,0);
+    return{type:'calc',q:`${names[i]} <b>${m} g</b> を <b>${dT} ℃</b> 上昇させるのに必要な熱量は何 J か。<br>（${names[i]}の比熱：${cs[i]} J/(g·K)）`,
+    fm:'Q = mcΔT',unit:'J',ans:Q,tol:1,
+    ex:`<div class="step">Q = mcΔT = ${m} × ${cs[i]} × ${dT} = <b>${Q} J</b></div>比熱の単位が J/(g·K) のとき、m は g 単位で代入します。`};
+  }},
+  {cat:'熱',fn(){
+    const m1=ri(100,500),T1=ri(60,95),m2=ri(100,500),T2=ri(5,30);
+    const Tm=nice((m1*T1+m2*T2)/(m1+m2),1);
+    return{type:'calc',q:`<b>${T1} ℃ の水 ${m1} g</b> と <b>${T2} ℃ の水 ${m2} g</b> を混ぜた。熱平衡後の温度は何 ℃ か（小数第1位まで）。`,
+    fm:'m₁(T₁−T) = m₂(T−T₂)',unit:'℃',ans:Tm,tol:0.3,
+    ex:`熱平衡：高温側が失った熱量＝低温側が得た熱量（比熱が同じなので消える）<div class="step">T = (m₁T₁ + m₂T₂)/(m₁+m₂)<br>= (${m1}×${T1}+${m2}×${T2})/(${m1}+${m2})<br>= ${m1*T1+m2*T2}/${m1+m2} ≈ <b>${Tm} ℃</b></div>`};
+  }},
+  {cat:'熱',fn(){
+    const m=ri(100,500),dT=ri(10,60),Q=ri(5000,100000);
+    const c=nice(Q/(m*dT),2);
+    return{type:'calc',q:`ある固体 <b>${m} g</b> を <b>${dT} ℃</b> 上昇させるのに <b>${Q} J</b> の熱量が必要だった。この物質の比熱は何 J/(g·K) か（小数第2位まで）。`,
+    fm:'c = Q/(mΔT)',unit:'J/(g·K)',ans:c,tol:0.02,
+    ex:`Q = mcΔT を c について解く<div class="step">c = Q/(mΔT) = ${Q}/(${m}×${dT}) = ${nice(Q/(m*dT),4)} ≈ <b>${c} J/(g·K)</b></div>`};
+  }},
+  {cat:'熱',fn(){
+    const alpha_list=[[12,'鉄'],[17,'銅'],[23,'アルミニウム'],[11,'鋼']];
+    const [al,mat]=alpha_list[ri(0,3)];
+    const L0=ri(1,50),dT=ri(20,100);
+    const dL=nice(L0*al*1e-6*dT*1000,3);
+    return{type:'calc',q:`長さ <b>${L0} m</b> の${mat}棒を <b>${dT} ℃</b> 上昇させた。伸びは何 mm か（小数第3位まで）。<br>（${mat}の線膨張係数：${al}×10⁻⁶ /℃）`,
+    fm:'ΔL = L₀αΔT',unit:'mm',ans:dL,tol:0.005,
+    ex:`<div class="step">ΔL = L₀αΔT = ${L0} × ${al}×10⁻⁶ × ${dT}<br>= ${nice(L0*al*1e-6*dT,8)} m = <b>${dL} mm</b></div>`};
+  }},
+  {cat:'熱',fn(){
+    const opts=['内部エネルギーが増加すると温度は上昇する傾向がある','分子の平均運動エネルギーが大きいほど温度は低い','絶対零度（0 K）では分子運動が最大になる','熱は低温から高温へ自然に移動する'];
+    return{type:'choice',q:`温度と熱に関する記述として正しいものはどれか。`,opts,ans:opts[0],
+    ex:`・温度は分子の<b>平均運動エネルギー</b>に比例します（高いほど温度も高い）<br>・<b>絶対零度（0 K = −273.15 ℃）</b>では分子の熱運動が最小（ゼロに近づく）<br>・熱は<b>高温→低温</b>に自然に流れます（熱力学第2法則）`};
+  }},
+
+  // ════════════ 波 ════════════
+  {cat:'波',fn(){
+    const f=ri(100,3000),lam=rf(0.05,3.0,2),v=nice(f*lam,1);
+    return{type:'calc',q:`周波数 <b>${f} Hz</b>、波長 <b>${lam} m</b> の波の速さは何 m/s か（小数第1位まで）。`,
+    fm:'v = fλ',unit:'m/s',ans:v,tol:0.1,
+    ex:`<div class="step">v = fλ = ${f} × ${lam} = <b>${v} m/s</b></div>`};
+  }},
+  {cat:'波',fn(){
+    const v=ri(200,400),f=ri(50,2000),lam=nice(v/f,3);
+    return{type:'calc',q:`速さ <b>${v} m/s</b>、周波数 <b>${f} Hz</b> の波の波長は何 m か（小数第3位まで）。`,
+    fm:'λ = v/f',unit:'m',ans:lam,tol:0.005,
+    ex:`<div class="step">λ = v/f = ${v}/${f} ≈ <b>${lam} m</b></div>`};
+  }},
+  {cat:'波',fn(){
+    const T_vals=[0.002,0.004,0.005,0.01,0.02,0.025,0.05,0.1];
+    const T=T_vals[ri(0,7)],f=nice(1/T,1);
+    return{type:'calc',q:`周期 <b>${T} s</b> の波の周波数は何 Hz か（小数第1位まで）。`,
+    fm:'f = 1/T',unit:'Hz',ans:f,tol:0.1,
+    ex:`<div class="step">f = 1/T = 1/${T} = <b>${f} Hz</b></div>周波数と周期は逆数の関係です。`};
+  }},
+  {cat:'波',fn(){
+    const v0=340,vs=ri(5,40),f0=ri(400,2000);
+    const fObs=nice(f0*v0/(v0-vs),1);
+    return{type:'calc',q:`音速を 340 m/s とする。${f0} Hz の音を出す救急車が観測者に向かって <b>${vs} m/s</b> で近づいている。観測者が聞く音の周波数は何 Hz か（小数第1位まで）。`,
+    fm:'f = f₀·v/(v−vs)',unit:'Hz',ans:fObs,tol:1,
+    ex:`<b>ドップラー効果</b>：音源が近づく場合、波長が短くなり周波数が高く聞こえる。<div class="step">f = f₀ × v/(v−vs) = ${f0} × 340/(340−${vs}) = ${f0} × 340/${340-vs} ≈ <b>${fObs} Hz</b></div>`};
+  }},
+  {cat:'波',fn(){
+    const opts=['縦波は媒質の振動方向と波の進行方向が平行である','横波は媒質の振動方向と波の進行方向が平行である','音波は横波の一種である','光波は縦波の一種である'];
+    return{type:'choice',q:`波の性質に関する記述として正しいものはどれか。`,opts,ans:opts[0],
+    ex:`<b>縦波（疎密波）</b>：媒質の振動方向と進行方向が<b>同じ（平行）</b>→ 音波が代表例<br><b>横波</b>：媒質の振動方向が進行方向に<b>垂直</b>→ 光波・水面波・弦の振動など`};
+  }},
+  {cat:'波',fn(){
+    const n_pairs=[[1.0,1.5,'空気→ガラス'],[1.5,1.0,'ガラス→空気'],[1.0,1.33,'空気→水']];
+    const [n1,n2,desc]=n_pairs[ri(0,2)];
+    const theta1_list=[30,45,60];
+    const theta1=theta1_list[ri(0,2)];
+    const sin2=n1*Math.sin(theta1*Math.PI/180)/n2;
+    const opts=['光は屈折率が大きい媒質に入るとき、法線に近づく（屈折角＜入射角）','光は屈折率が大きい媒質に入るとき、法線から遠ざかる（屈折角＞入射角）','全反射は光が屈折率の大きい媒質から小さい媒質に進む場合にのみ起こる','スネルの法則：n₁cosθ₁ = n₂cosθ₂'];
+    return{type:'choice',q:`光の屈折に関する記述として正しいものはどれか。`,opts,ans:opts[0],
+    ex:`<b>スネルの法則</b>：n₁sinθ₁ = n₂sinθ₂<br>・屈折率大きい方へ → 法線に近づく（屈折角＜入射角）<br>・<b>全反射</b>は n₁＞n₂（屈折率大→小）で入射角が臨界角を超えたとき発生<br>　例：水中・ガラス中から空気へ出る場合`};
+  }},
+  {cat:'波',fn(){
+    const n=rf(1.3,1.8,2);
+    const c=3e8,v=nice(c/n/1e7,2)*1e7; // rough
+    const vStr=nice(3.0/n,2);
+    return{type:'calc',q:`屈折率 <b>n = ${n}</b> のガラス中での光の速さは何×10⁸ m/s か（小数第2位まで）。<br>（空気中の光速：c = 3.0×10⁸ m/s）`,
+    fm:'v = c/n',unit:'×10⁸ m/s',ans:vStr,tol:0.02,
+    ex:`屈折率の定義：n = c/v より<div class="step">v = c/n = 3.0×10⁸/${n} ≈ <b>${vStr}×10⁸ m/s</b></div>`};
+  }},
+
+  // ════════════ 電気 ════════════
+  {cat:'電気',fn(){
+    const R=ri(2,200),I=rf(0.1,5,1),V=nice(R*I,1);
+    return{type:'calc',q:`抵抗 <b>${R} Ω</b> に電流 <b>${I} A</b> が流れている。両端の電圧は何 V か。`,
+    fm:'V = IR',unit:'V',ans:V,tol:0.05,
+    ex:`<div class="step">V = IR = ${R} × ${I} = <b>${V} V</b></div>`};
+  }},
+  {cat:'電気',fn(){
+    const V=ri(5,120),I=rf(0.1,5,1),R=nice(V/I,1);
+    return{type:'calc',q:`電圧 <b>${V} V</b> をかけると電流 <b>${I} A</b> が流れた。抵抗は何 Ω か（小数第1位まで）。`,
+    fm:'R = V/I',unit:'Ω',ans:R,tol:0.1,
+    ex:`<div class="step">R = V/I = ${V}/${I} ≈ <b>${R} Ω</b></div>`};
+  }},
+  {cat:'電気',fn(){
+    const R1=ri(10,80),R2=ri(10,80),R3=ri(10,80),Rt=R1+R2+R3;
+    return{type:'calc',q:`<b>${R1} Ω、${R2} Ω、${R3} Ω</b> の3つの抵抗を直列接続した。合成抵抗は何 Ω か。`,
+    fm:'R = R₁+R₂+R₃',unit:'Ω',ans:Rt,tol:0,
+    ex:`直列接続では各抵抗を単純に加算します。<div class="step">R = ${R1}+${R2}+${R3} = <b>${Rt} Ω</b></div>`};
+  }},
+  {cat:'電気',fn(){
+    const pairs=[[10,10],[20,20],[12,6],[10,15],[6,3],[4,12],[8,8],[20,5],[30,60]];
+    const [R1,R2]=pairs[ri(0,pairs.length-1)];
+    const R=nice(R1*R2/(R1+R2),2);
+    return{type:'calc',q:`<b>${R1} Ω</b> と <b>${R2} Ω</b> の抵抗を並列接続した。合成抵抗は何 Ω か（小数第2位まで）。`,
+    fm:'1/R = 1/R₁ + 1/R₂',unit:'Ω',ans:R,tol:0.05,
+    ex:`<div class="step">R = R₁R₂/(R₁+R₂) = ${R1}×${R2}/(${R1}+${R2}) = ${R1*R2}/${R1+R2} ≈ <b>${R} Ω</b></div>または 1/R = 1/${R1}+1/${R2} から求めても同じです。`};
+  }},
+  {cat:'電気',fn(){
+    const Vtot=ri(10,60),R1=ri(5,30),R2=ri(5,30);
+    const Rt=R1+R2,I=nice(Vtot/Rt,2),V1=nice(I*R1,2);
+    return{type:'calc',q:`<b>${R1} Ω</b> と <b>${R2} Ω</b> を直列に接続し、電源電圧 <b>${Vtot} V</b> を加えた。${R1} Ω の抵抗の両端の電圧は何 V か（小数第2位まで）。`,
+    fm:'V₁ = I·R₁ = V·R₁/(R₁+R₂)',unit:'V',ans:V1,tol:0.05,
+    ex:`直列回路では電流が共通です。<div class="step">I = V/(R₁+R₂) = ${Vtot}/${R1+R2} ≈ ${I} A<br>V₁ = IR₁ = ${I}×${R1} ≈ <b>${V1} V</b></div>`};
+  }},
+  {cat:'電気',fn(){
+    const V=ri(10,60),R1=ri(10,60),R2=ri(10,60);
+    const I1=nice(V/R1,2),I2=nice(V/R2,2),It=nice(I1+I2,2);
+    return{type:'calc',q:`<b>${R1} Ω</b> と <b>${R2} Ω</b> を並列に接続し、両端に <b>${V} V</b> をかけた。幹線に流れる電流は何 A か（小数第2位まで）。`,
+    fm:'I = I₁+I₂ = V/R₁+V/R₂',unit:'A',ans:It,tol:0.05,
+    ex:`並列回路では各抵抗に同じ電圧がかかります。<div class="step">I₁ = ${V}/${R1} ≈ ${I1} A<br>I₂ = ${V}/${R2} ≈ ${I2} A<br>I = I₁+I₂ = ${I1}+${I2} = <b>${It} A</b></div>`};
+  }},
+  {cat:'電気',fn(){
+    const types=ri(0,2);
+    if(types===0){const V=ri(5,100),I=rf(0.5,10,1),P=nice(V*I,1);
+      return{type:'calc',q:`電圧 <b>${V} V</b>、電流 <b>${I} A</b> の電力は何 W か。`,fm:'P = VI',unit:'W',ans:P,tol:0.05,
+      ex:`<div class="step">P = VI = ${V}×${I} = <b>${P} W</b></div>`};}
+    if(types===1){const R=ri(5,100),I=rf(0.5,5,1),P=nice(I*I*R,1);
+      return{type:'calc',q:`抵抗 <b>${R} Ω</b> に電流 <b>${I} A</b> が流れている。消費電力は何 W か。`,fm:'P = I²R',unit:'W',ans:P,tol:0.1,
+      ex:`<div class="step">P = I²R = ${I}²×${R} = ${nice(I*I,2)}×${R} = <b>${P} W</b></div>`};}
+    const R=ri(5,100),V=ri(5,100),P=nice(V*V/R,1);
+    return{type:'calc',q:`抵抗 <b>${R} Ω</b> に電圧 <b>${V} V</b> をかけた。消費電力は何 W か（小数第1位まで）。`,fm:'P = V²/R',unit:'W',ans:P,tol:0.1,
+    ex:`<div class="step">P = V²/R = ${V}²/${R} = ${V*V}/${R} ≈ <b>${P} W</b></div>`};
+  }},
+  {cat:'電気',fn(){
+    const P=ri(100,2000),t_h=rf(0.5,5,1),W_J=nice(P*t_h*3600,0);
+    return{type:'calc',q:`消費電力 <b>${P} W</b> の機器を <b>${t_h} 時間</b> 使用した。電力量は何 J か。`,
+    fm:'W = Pt',unit:'J',ans:W_J,tol:50,
+    ex:`<div class="step">W = Pt = ${P} × (${t_h}×3600 s) = ${P}×${t_h*3600} = <b>${W_J} J</b></div>（${nice(P*t_h/1000,3)} kWh に相当）`};
+  }},
+  {cat:'電気',fn(){
+    const d_mm=ri(2,20),V=ri(100,500),E=nice(V/(d_mm*1e-3)/1e3,1);
+    return{type:'calc',q:`2枚の平行板電極の間隔が <b>${d_mm} mm</b>、電位差が <b>${V} V</b> のとき、その間の電場の強さは何 kV/m か（小数第1位まで）。`,
+    fm:'E = V/d',unit:'kV/m',ans:E,tol:0.1,
+    ex:`<div class="step">d = ${d_mm} mm = ${d_mm*1e-3} m<br>E = V/d = ${V}/${d_mm*1e-3} = ${nice(V/(d_mm*1e-3),0)} V/m = <b>${E} kV/m</b></div>`};
+  }},
+  {cat:'電気',fn(){
+    const q=rf(1,10,1),E=ri(100,5000),F=nice(q*1e-9*E*1e6,2);// tiny
+    // Use larger charge for simpler numbers
+    const qC=rf(0.001,0.05,3),E2=ri(100,2000),F2=nice(qC*E2,2);
+    return{type:'calc',q:`電場の強さ <b>${E2} N/C</b> の電場の中に電荷 <b>${qC} C</b> の電荷を置いた。この電荷にはたらく静電気力は何 N か（小数第2位まで）。`,
+    fm:'F = qE',unit:'N',ans:F2,tol:0.01,
+    ex:`<div class="step">F = qE = ${qC} × ${E2} = <b>${F2} N</b></div>電場は単位電荷（1 C）にはたらく静電気力として定義されます。`};
+  }},
+  {cat:'電気',fn(){
+    const opts=['抵抗を直列接続すると合成抵抗は各抵抗の和に等しい','抵抗を並列接続すると合成抵抗は各抵抗の最大値に等しい','直列接続では各抵抗に流れる電流は異なる','並列接続では各抵抗の両端の電圧は異なる'];
+    return{type:'choice',q:`抵抗の接続に関する記述として正しいものはどれか。`,opts,ans:opts[0],
+    ex:`<b>直列接続</b>：合成抵抗 R = R₁+R₂+… / 電流は共通 / 電圧は分配される<br><b>並列接続</b>：1/R = 1/R₁+1/R₂+… / 電圧は共通 / 電流は分配される<br>→ 並列の合成抵抗は各抵抗より<b>小さく</b>なります`};
+  }},
+];
+
+// ─── UI Logic ─────────────────────────────────────────────────────────────────
+
+function gen(){
+  answered=false; selIdx=-1; shuffOpts=[];
+
+  const pool = selCat==='all' ? GEN : GEN.filter(g=>g.cat===selCat);
+  const g = pool[ri(0,pool.length-1)];
+  const p = g.fn();
+  cur = p;
+  qCount++;
+
+  document.getElementById('start-area').style.display='none';
+  document.getElementById('result').classList.remove('on');
+  const subBtn=document.getElementById('sub-btn');
+  subBtn.disabled=false;
+  subBtn.textContent='✔ 答え合わせ';
+
+  // Category badge
+  const badge=document.getElementById('q-cat-badge');
+  badge.textContent=g.cat;
+  badge.className='q-cat cat-'+g.cat;
+  document.getElementById('q-num').textContent='Q'+qCount;
+
+  // Question text + formula
+  let qt=`<p>${p.q}</p>`;
+  if(p.fm) qt+=`<div class="formula">${p.fm}</div>`;
+  document.getElementById('q-text').innerHTML=qt;
+
+  // Answer area
+  const aa=document.getElementById('ans-area');
+  if(p.type==='choice'){
+    shuffOpts=sh(p.opts);
+    const labels=['A','B','C','D'];
+    let html='<ul class="opts">';
+    shuffOpts.forEach((o,i)=>{
+      html+=`<li class="opt" id="opt${i}" onclick="pick(${i})"><span class="opt-lbl">${labels[i]}</span><span>${o}</span></li>`;
+    });
+    html+='</ul>';
+    aa.innerHTML=html;
+  } else {
+    aa.innerHTML=`<div class="calc-wrap">
+      <span class="calc-lbl">答えを数値で入力してください（単位：${p.unit}）</span>
+      <div class="calc-row">
+        <input class="calc-input" id="ci" type="number" step="any" placeholder="数値を入力…" onkeydown="if(event.key==='Enter')submit()">
+        <span class="calc-unit">${p.unit}</span>
+      </div>
+    </div>`;
+    setTimeout(()=>{const ci=document.getElementById('ci');if(ci)ci.focus();},100);
+  }
+
+  document.getElementById('q-area').classList.add('on');
+}
+
+function pick(i){
+  if(answered) return;
+  selIdx=i;
+  document.querySelectorAll('.opt').forEach((el,j)=>{
+    el.classList.toggle('sel',j===i);
+  });
+}
+
+function submit(){
+  if(answered) return;
+  let correct=false;
+
+  if(cur.type==='choice'){
+    if(selIdx<0){alert('選択肢を選んでください。');return;}
+    correct = shuffOpts[selIdx]===cur.ans;
+    document.querySelectorAll('.opt').forEach((el,i)=>{
+      if(shuffOpts[i]===cur.ans) el.classList.add('ok');
+      else if(i===selIdx && !correct) el.classList.add('ng');
+    });
+  } else {
+    const ci=document.getElementById('ci');
+    if(!ci||ci.value===''){alert('数値を入力してください。');return;}
+    const uv=parseFloat(ci.value);
+    const tol=cur.tol!=null?cur.tol:Math.abs(cur.ans)*0.01+0.001;
+    correct=Math.abs(uv-cur.ans)<=tol;
+    ci.style.borderColor=correct?'var(--success)':'var(--error)';
+  }
+
+  answered=true;
+  document.getElementById('sub-btn').disabled=true;
+
+  if(correct){
+    cor++;
+    const b=document.getElementById('r-badge');
+    b.className='result-badge ok';
+    b.textContent='✓ 正解！';
+  } else {
+    inc++;
+    const b=document.getElementById('r-badge');
+    b.className='result-badge ng';
+    b.textContent=`✗ 不正解　（正答：${cur.ans} ${cur.unit||''}）`;
+  }
+
+  document.getElementById('expl').innerHTML=
+    `<div class="expl-title">📖 解説</div><div class="expl-body">${cur.ex}</div>`;
+  document.getElementById('result').classList.add('on');
+
+  document.getElementById('s-cor').textContent=cor;
+  document.getElementById('s-inc').textContent=inc;
+  const tot=cor+inc;
+  document.getElementById('s-acc').textContent=tot>0?Math.round(cor/tot*100)+'%':'—';
+}
+
+// Category filter
+document.getElementById('cats').addEventListener('click',e=>{
+  const btn=e.target.closest('.cat-btn');
+  if(!btn) return;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  selCat=btn.dataset.cat;
+});
+</script>
+</body>
+</html>
