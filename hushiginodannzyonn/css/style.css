@@ -1,0 +1,174 @@
+:root {
+  color-scheme: dark;
+  --bg: #101418;
+  --panel: #1a2129;
+  --panel-2: #232d38;
+  --border: #354354;
+  --text: #edf2f7;
+  --muted: #9eb0c2;
+  --accent: #7dd3fc;
+  --danger: #fb7185;
+  --ok: #86efac;
+  --shadow: rgba(0, 0, 0, 0.28);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: radial-gradient(circle at top, #17202a, var(--bg));
+  color: var(--text);
+}
+
+body {
+  padding: 16px;
+}
+
+h1,
+h2,
+p,
+ul {
+  margin: 0;
+}
+
+ul {
+  padding-left: 18px;
+}
+
+.app-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(980px, 1fr) 320px;
+  gap: 16px;
+  align-items: start;
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px var(--shadow);
+}
+
+.page-header,
+.page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+}
+
+.page-header p,
+.page-footer p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.header-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.header-badges span {
+  padding: 6px 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.game-panel {
+  padding: 14px;
+}
+
+#game-canvas {
+  display: block;
+  width: 960px;
+  height: 576px;
+  image-rendering: pixelated;
+  border-radius: 10px;
+  background: #0b0f14;
+  border: 1px solid #2a3440;
+}
+
+.sidebar {
+  display: grid;
+  gap: 16px;
+}
+
+.sidebar .panel {
+  padding: 14px;
+}
+
+.sidebar h2 {
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+#hud {
+  display: grid;
+  gap: 8px;
+}
+
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(158, 176, 194, 0.25);
+}
+
+.hud-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.hud-label {
+  color: var(--muted);
+}
+
+.hud-value.hp-low {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.hud-value.good {
+  color: var(--ok);
+}
+
+.log-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.log-list li {
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  color: #dbe7f2;
+  line-height: 1.45;
+}
+
+.controls-list {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+}

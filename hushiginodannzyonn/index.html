@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dungeon Prototype</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="page-header panel">
+        <div>
+          <h1>Dungeon Prototype</h1>
+          <p>トルネコ / 不思議のダンジョン系を目指す、拡張前提の最小構成</p>
+        </div>
+        <div class="header-badges">
+          <span>HTML</span>
+          <span>CSS</span>
+          <span>JavaScript Modules</span>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel game-panel">
+          <canvas id="game-canvas" width="960" height="576" aria-label="game screen"></canvas>
+        </section>
+
+        <aside class="sidebar">
+          <section class="panel">
+            <h2>Status</h2>
+            <div id="hud"></div>
+          </section>
+
+          <section class="panel">
+            <h2>Log</h2>
+            <ul id="log" class="log-list"></ul>
+          </section>
+
+          <section class="panel">
+            <h2>Controls</h2>
+            <ul class="controls-list">
+              <li>移動: 矢印 / WASD / HJKL</li>
+              <li>斜め移動: QEZC / YUBN</li>
+              <li>待機: . / X / Numpad5 / Space</li>
+              <li>階段を降りる: &gt; / Enter</li>
+              <li>やられた後の再開: R</li>
+            </ul>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="page-footer panel">
+        <p>静的ファイルのみで動作。GitHub Pages にそのまま置けます。</p>
+      </footer>
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>
